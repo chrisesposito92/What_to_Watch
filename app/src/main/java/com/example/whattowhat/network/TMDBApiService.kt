@@ -8,10 +8,10 @@ import retrofit2.Response
 
 interface TMDBApiService {
     @GET("movie/popular")
-    fun getPopularMovies(@Query("api_key") apiKey: String): Call<MovieResponse>
+    suspend fun getPopularMovies(@Query("api_key") apiKey: String): Response<MovieResponse>
 
     @GET("watch/providers/movie?language=en-US&watch_region=US")
-    fun getWatchProvidersMovies(@Query("api_key") apiKey: String): Call<ProviderResponse>
+    suspend fun getWatchProvidersMovies(@Query("api_key") apiKey: String): Response<ProviderResponse>
 
     @GET("discover/movie")
     suspend fun discoverMovies(
@@ -21,6 +21,7 @@ interface TMDBApiService {
         @Query("include_video") includeVideo: Boolean = false,
         @Query("page") page: Int = 1,
         @Query("watch_region") watchRegion: String = "US",
-        @Query("with_watch_providers") providerId: String
+        @Query("with_watch_providers") providerId: String,
+        @Query("with_genres") genreId: String
     ): Response<MovieDiscoverResponse>
 }

@@ -2,6 +2,8 @@
 package com.example.whattowhat
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
@@ -39,41 +41,27 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-                val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = "main") {
-                    composable("main") {
-                        MovieApp(navController)
-                    }
-                    composable(
-                        "providerDetail/{providerId}/{providerName}",
-                        arguments = listOf(
-                            navArgument("providerId") { type = NavType.StringType },
-                            navArgument("providerName") { type = NavType.StringType }
-                        )
-                    ) { backStackEntry ->
-                        val providerId = backStackEntry.arguments?.getString("providerId")
-                        val providerName = backStackEntry.arguments?.getString("providerName")
-                        ProviderDetailScreen(providerId, providerName)
-                    }
-                }
+            MovieApp()
         }
     }
 }
 
 @Composable
-fun MovieApp(navController: NavController, movieViewModel: MovieViewModel = viewModel()) {
-    val providers = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
-
-    ProviderList(providers.value) { selectedProvider ->
-        navController.navigate("providerDetail/${selectedProvider.provider_id}/${selectedProvider.provider_name}")
-
-    }
+fun MovieApp(movieViewModel: MovieViewModel = viewModel()) {
+    ProviderDetailScreen()
 }
 
 @Composable
@@ -110,48 +98,88 @@ fun ProviderList(providers: List<Provider>, onProviderSelected: (Provider) -> Un
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProviderDetailScreen(providerId: String?, providerName: String?, movieViewModel: MovieViewModel = viewModel()) {
-    var expanded by remember { mutableStateOf(false) }
-    var selectedGenre by remember { mutableStateOf(GenreData.genres.first().name) }
-    val movies by movieViewModel.getMoviesByProvider("API_KEY", providerId ?: "").observeAsState(initial = listOf())
+fun ProviderDetailScreen(movieViewModel: MovieViewModel = viewModel()) {
+    val context = LocalContext.current
+    val providersState = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
+    val genres = GenreData.genres
+    var expandedGenre by remember { mutableStateOf(false) }
+    var expandedProvider by remember { mutableStateOf(false) }
+    var selectedGenreId by remember { mutableStateOf(genres.first().id) }
+    val selectedGenreName = genres.first { it.id == selectedGenreId }.name
+    val selectedProviderState = remember { mutableStateOf<Provider?>(null) }
+    val movies by movieViewModel.moviesState.observeAsState(initial = emptyList())
 
+    LaunchedEffect(providersState.value) {
+        if (providersState.value.isNotEmpty()) {
+            selectedProviderState.value = providersState.value.first()
+
+        }
+    }
+
+    // Triggered when the selected genre or provider changes
+    LaunchedEffect(selectedGenreId, selectedProviderState.value) {
+        selectedProviderState.value?.let { provider ->
+            // You need to map the selected genre to its ID
+            movieViewModel.getMoviesByProviderAndGenre("500f402322677a4df10fb559aa63f22b", provider.provider_id.toString(),
+                selectedGenreId.toString()
+            )
+        }
+    }
+
+    // This is the UI that will be displayed on the screen
     Column {
-        Text(text = "Movies on $providerName")
-
-        // Dropdown menu for selecting a genre
+        // Genre Dropdown
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+            expanded = expandedGenre,
+            onExpandedChange = { expandedGenre = !expandedGenre }
         ) {
             TextField(
+                value = selectedGenreName,
+                onValueChange = {  },
                 readOnly = true,
-                value = selectedGenre,
-                onValueChange = { /* Handle value change if needed */ },
-                label = { Text("Select Genre") },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = "Dropdown Arrow"
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = true }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGenre) },
+                modifier = Modifier.menuAnchor()
             )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+            ExposedDropdownMenu(
+                expanded = expandedGenre,
+                onDismissRequest = { expandedGenre = false }
             ) {
-                GenreData.genres.forEach { genre ->
+                genres.forEach { genre ->
                     DropdownMenuItem(
+                        text = { Text(text = genre.name) },
                         onClick = {
-                            selectedGenre = genre.name
-                            expanded = false
-                            // Fetch movies based on the selected genre
+                            selectedGenreId = genre.id
+                            expandedGenre = false
                         }
-                    ) {
-                        Text(genre.name)
-                    }
+                    )
+                }
+            }
+        }
+
+        // Provider Dropdown
+        ExposedDropdownMenuBox(
+            expanded = expandedProvider,
+            onExpandedChange = { expandedProvider = !expandedProvider }
+        ) {
+            TextField(
+                value = selectedProviderState.value?.provider_name ?: "",
+                onValueChange = { /* Ignored as the field is read-only */ },
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedProvider) },
+                modifier = Modifier.menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedProvider,
+                onDismissRequest = { expandedProvider = false }
+            ) {
+                providersState.value.forEach { provider ->
+                    DropdownMenuItem(
+                        text = { Text(text = provider.provider_name) },
+                        onClick = {
+                            selectedProviderState.value = provider
+                            expandedProvider = false
+                        }
+                    )
                 }
             }
         }
@@ -169,7 +197,34 @@ fun ProviderDetailScreen(providerId: String?, providerName: String?, movieViewMo
 
 @Composable
 fun MovieItemView(movie: MovieItem) {
-    // Composable to display individual movie items
-    // Include movie title, image, etc.
-    Text(text = movie.title)
+    val imageUrlBase = "https://image.tmdb.org/t/p/w500"
+
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth(),
+    //    elevation = 4.dp // Use CardDefaults for elevation
+    ) {
+        Column {
+            movie.poster_path?.let { posterPath ->
+                val imageUrl = "$imageUrlBase$posterPath"
+                Image(
+                    painter = rememberImagePainter(imageUrl),
+                    contentDescription = "Movie Poster",
+                    modifier = Modifier
+                        .height(400.dp)
+                        .fillMaxWidth(),
+                    contentScale = ContentScale.FillWidth
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.bodyLarge, // Change to a style that exists in Material3
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
 }
+
+
