@@ -2,6 +2,7 @@ package com.example.whattowhat.model
 
 object GenreData {
     val genres = listOf(
+        Genre(0, "All Genres"),
         Genre(28, "Action"),
         Genre(12, "Adventure"),
         Genre(16, "Animation"),

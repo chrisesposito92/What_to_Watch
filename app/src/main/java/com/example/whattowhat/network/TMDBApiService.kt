@@ -20,8 +20,12 @@ interface TMDBApiService {
         @Query("include_adult") includeAdult: Boolean = false,
         @Query("include_video") includeVideo: Boolean = false,
         @Query("page") page: Int = 1,
+        @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("watch_region") watchRegion: String = "US",
-        @Query("with_watch_providers") providerId: String,
-        @Query("with_genres") genreId: String
+        @Query("with_watch_providers") providerId: String? = null,
+        @Query("with_genres") genreId: String? = null,
+        @Query("without_genres") withoutGenreId: String?,
+        @Query("with_original_language") originalLanguage: String = "en",
+        @Query("vote_count.gte") voteCount: Int = 250,
     ): Response<MovieDiscoverResponse>
 }

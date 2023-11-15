@@ -32,19 +32,83 @@ class MovieViewModel : ViewModel() {
     private val _moviesState = MutableLiveData<List<MovieItem>>()
     val moviesState: LiveData<List<MovieItem>> = _moviesState
 
+    private val _totalPages = MutableLiveData<Int>()
+    val totalPages: LiveData<Int> = _totalPages
+
     // Method to fetch movies by provider and genre
-    fun getMoviesByProviderAndGenre(apiKey: String, providerId: String, genreId: String) {
+    fun getMoviesByProviderAndGenre(apiKey: String, providerId: String, genreId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
         viewModelScope.launch {
-            // Fetch movies from the repository or use Retrofit to make the network call
-            // Update the _moviesState LiveData
-            // For example:
+            val withoutGenreId = if (excludeAnimation) "16" else null
             val response = RetrofitClient.instance.discoverMovies(
                 apiKey = apiKey,
                 providerId = providerId,
-                genreId = genreId
+                genreId = genreId,
+                page = page,
+                sortBy = sortBy,
+                withoutGenreId = withoutGenreId
             )
             if (response.isSuccessful) {
                 _moviesState.postValue(response.body()?.results)
+                _totalPages.postValue(response.body()?.total_pages)
+            } else {
+                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+                _moviesState.postValue(emptyList())
+            }
+        }
+    }
+
+    fun getMoviesByProvider(apiKey: String, providerId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
+        viewModelScope.launch {
+            val withoutGenreId = if (excludeAnimation) "16" else null
+            val response = RetrofitClient.instance.discoverMovies(
+                apiKey = apiKey,
+                providerId = providerId,
+                page = page,
+                sortBy = sortBy,
+                withoutGenreId = withoutGenreId
+            )
+            if (response.isSuccessful) {
+                _moviesState.postValue(response.body()?.results)
+                _totalPages.postValue(response.body()?.total_pages)
+            } else {
+                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+                _moviesState.postValue(emptyList())
+            }
+        }
+    }
+
+    fun getMoviesByGenre(apiKey: String, genreId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
+        viewModelScope.launch {
+            val withoutGenreId = if (excludeAnimation) "16" else null
+            val response = RetrofitClient.instance.discoverMovies(
+                apiKey = apiKey,
+                genreId = genreId,
+                page = page,
+                sortBy = sortBy,
+                withoutGenreId = withoutGenreId
+            )
+            if (response.isSuccessful) {
+                _moviesState.postValue(response.body()?.results)
+                _totalPages.postValue(response.body()?.total_pages)
+            } else {
+                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+                _moviesState.postValue(emptyList())
+            }
+        }
+    }
+
+    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
+        viewModelScope.launch {
+            val withoutGenreId = if (excludeAnimation) "16" else null
+            val response = RetrofitClient.instance.discoverMovies(
+                apiKey = apiKey,
+                page = page,
+                sortBy = sortBy,
+                withoutGenreId = withoutGenreId
+            )
+            if (response.isSuccessful) {
+                _moviesState.postValue(response.body()?.results)
+                _totalPages.postValue(response.body()?.total_pages)
             } else {
                 Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
                 _moviesState.postValue(emptyList())
