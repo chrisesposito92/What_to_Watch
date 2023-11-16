@@ -53,8 +53,12 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whattowhat.model.Genre
 import com.example.whattowhat.model.SortOption
@@ -205,7 +209,7 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
 
         // Movie grid
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 175.dp) // Set the number of columns to 3
+            columns = GridCells.Adaptive(minSize = 128.dp) // Set the number of columns to 3
 
         ) {
             items(movies.size) { index ->
@@ -225,30 +229,35 @@ fun GenreDropdown(
     var expanded by remember { mutableStateOf(false) }
     val selectedGenreName = genres.first { it.id == selectedGenreId }.name
 
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        TextField(
-            value = selectedGenreName,
-            onValueChange = { },
-            readOnly = true,
-            label = { Text("Genre") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor()
-        )
-        ExposedDropdownMenu(
+    Box (
+        modifier = Modifier
+            .clickable { expanded = !expanded }
+    ){
+        ExposedDropdownMenuBox(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onExpandedChange = { expanded = !expanded }
         ) {
-            genres.forEach { genre ->
-                DropdownMenuItem(
-                    text = { Text(text = genre.name) },
-                    onClick = {
-                        onGenreSelected(genre.id)
-                        expanded = false
-                    }
-                )
+            TextField(
+                value = selectedGenreName,
+                onValueChange = { },
+                readOnly = true,
+                label = { Text("Genre") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                genres.forEach { genre ->
+                    DropdownMenuItem(
+                        text = { Text(text = genre.name) },
+                        onClick = {
+                            onGenreSelected(genre.id)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -356,6 +365,7 @@ fun PaginationControls(
             value = currentPage.toString(),
             onValueChange = { newValue -> onPageChange(newValue.toIntOrNull() ?: currentPage) },
             singleLine = true,
+            readOnly = true,
             textStyle = MaterialTheme.typography.bodyLarge,
             modifier = Modifier
                 .width(64.dp)
@@ -376,7 +386,7 @@ fun PaginationControls(
 @Composable
 fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
     val context = LocalContext.current
-    val imageUrlBase = "https://image.tmdb.org/t/p/w342"
+    val imageUrlBase = "https://image.tmdb.org/t/p/w154"
     var genres = ""
 
     movie.genre_ids.forEach { genreId ->
@@ -387,8 +397,7 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
     Card(
         modifier = Modifier
             .padding(8.dp)
-            .width(180.dp)
-        //    elevation = 4.dp // Use CardDefaults for elevation
+
     ) {
         Column {
             movie.poster_path?.let { posterPath ->
@@ -397,29 +406,39 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
                     painter = rememberImagePainter(imageUrl),
                     contentDescription = "Movie Poster",
                     modifier = Modifier
-                        .height(270.dp)
+                        .aspectRatio(2 / 3f)
                         .fillMaxWidth()
                         .clickable {
                             viewModel.fetchTrailer(movie.id, "500f402322677a4df10fb559aa63f22b")
-                    },
-                    contentScale = ContentScale.FillWidth
+                        },
+                    contentScale = ContentScale.FillHeight
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = movie.title + " (" + movie.release_date.substring(0,4) + ")" ,
-                style = MaterialTheme.typography.bodySmall, // Change to a style that exists in Material3
-                modifier = Modifier.padding(8.dp)
+                style = TextStyle(
+                    fontSize = 12.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(start = 4.dp, top = 5.dp, end = 1.dp, bottom = 1.dp)
             )
             Text(
-                text = "Rating: *${movie.vote_average}*",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                text = "Rating: ${movie.vote_average}",
+                style = TextStyle(
+                    fontSize = 10.sp,
+                    color = Color.Black
+                ),
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp, end = 0.dp, bottom = 0.dp)
             )
             Text(
                 text = "${genres.substring(0, genres.length - 2)}",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                style = TextStyle(
+                    fontSize = 10.sp, // Set the font size to 12 sp for example
+                    color = Color.Black // Optional: if you want to change the color
+                ),
+                modifier = Modifier.padding(start = 4.dp, top = 0.dp, end = 0.dp, bottom = 2.dp)
             )
         }
         // Observe the trailer URL event
