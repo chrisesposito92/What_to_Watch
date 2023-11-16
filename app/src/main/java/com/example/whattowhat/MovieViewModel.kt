@@ -116,5 +116,52 @@ class MovieViewModel : ViewModel() {
         }
     }
 
+    private val _trailerUrl = MutableLiveData<Event<String?>>()
+    val trailerUrl: LiveData<Event<String?>> = _trailerUrl
+
+    fun fetchTrailer(movieId: Int, apiKey: String) {
+        viewModelScope.launch(Dispatchers.IO) {  // Switch to IO Dispatcher
+            try {
+                val response = RetrofitClient.instance.getMovieVideos(movieId, apiKey)
+                if (response.isSuccessful) {
+                    val trailers = response.body()?.results?.filter { it.isYoutubeTrailer() }
+                    trailers?.firstOrNull()?.let {
+                        val trailerUrl = "https://www.youtube.com/watch?v=${it.key}"
+                        Log.d("MovieViewModel", "Trailer URL: $trailerUrl") // Log the trailer URL
+                        _trailerUrl.postValue(Event("https://www.youtube.com/watch?v=${it.key}"))
+                    } ?: run {
+                        Log.e("MovieViewModel", "No trailers found.")
+                    }
+                } else {
+                    Log.e("MovieViewModel", "Error fetching trailer: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Log.e("MovieViewModel", "Exception fetching trailer", e)
+            }
+        }
+    }
+
+    // Method to clear the trailer URL
+    fun clearTrailerUrl() {
+        _trailerUrl.postValue(null)
+    }
+
+    open class Event<out T>(private val content: T) {
+        var hasBeenHandled = false
+            private set
+
+        fun getContentIfNotHandled(): T? {
+            if (hasBeenHandled) {
+                return null
+            } else {
+                hasBeenHandled = true
+                return content
+            }
+        }
+
+        fun peekContent(): T = content
+    }
+
+
 }
 

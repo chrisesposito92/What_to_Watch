@@ -1,8 +1,12 @@
 
 package com.example.whattowhat
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,7 +16,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import androidx.navigation.NavType
 import com.example.whattowhat.model.Provider
 import com.example.whattowhat.model.GenreData
@@ -52,7 +55,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.whattowhat.model.Genre
+import com.example.whattowhat.model.SortOption
 import com.example.whattowhat.model.SortOptions
 import com.example.whattowhat.model.SortOptions.sortOptions
 
@@ -61,51 +66,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MovieApp()
+            val movieViewModel: MovieViewModel = viewModel()
+            MovieApp(movieViewModel)
         }
     }
 }
 
 @Composable
-fun MovieApp(movieViewModel: MovieViewModel = viewModel()) {
-    ProviderDetailScreen()
+fun MovieApp(movieViewModel: MovieViewModel) {
+    ProviderDetailScreen(movieViewModel)
 }
 
-@Composable
-fun ProviderList(providers: List<Provider>, onProviderSelected: (Provider) -> Unit) {
-    var selectedProvider by remember { mutableStateOf<Provider?>(null) }
-
-    Column {
-        providers.forEach { provider ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable {
-                        selectedProvider = provider
-                        onProviderSelected(provider)
-                    }
-            ) {
-                RadioButton(
-                    selected = (selectedProvider == provider),
-                    onClick = {
-                        selectedProvider = provider
-                        onProviderSelected(provider)
-                    }
-                )
-                Text(
-                    text = provider.provider_name.toString(),
-                    modifier = Modifier
-                        .padding(start = 16.dp)
-                        .align(Alignment.CenterVertically)
-                )
-            }
-        }
-    }
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProviderDetailScreen(movieViewModel: MovieViewModel = viewModel()) {
+fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
     val context = LocalContext.current
     val allProvidersOption = Provider(
         provider_id = 0,
@@ -184,96 +158,35 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel = viewModel()) {
             modifier= Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             // Genre Dropdown
-            ExposedDropdownMenuBox(
-                expanded = expandedGenre,
-                onExpandedChange = { expandedGenre = !expandedGenre }
-            ) {
-                TextField(
-                    value = selectedGenreName,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("Genre") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGenre) },
-                    modifier = Modifier.menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedGenre,
-                    onDismissRequest = { expandedGenre = false }
-                ) {
-                    genres.forEach { genre ->
-                        DropdownMenuItem(
-                            text = { Text(text = genre.name) },
-                            onClick = {
-                                selectedGenreId = genre.id
-                                expandedGenre = false
-                            }
-                        )
-                    }
-                }
-            }
+            GenreDropdown(
+                genres = genres,
+                selectedGenreId = selectedGenreId,
+                onGenreSelected = { selectedGenreId = it }
+            )
             // Provider Dropdown
-            ExposedDropdownMenuBox(
-                expanded = expandedProvider,
-                onExpandedChange = { expandedProvider = !expandedProvider }
-            ) {
-                TextField(
-                    value = selectedProviderState.value?.provider_name ?: "",
-                    onValueChange = { /* Ignored as the field is read-only */ },
-                    readOnly = true,
-                    label = { Text("Watch Provider") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedProvider) },
-                    modifier = Modifier.menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedProvider,
-                    onDismissRequest = { expandedProvider = false }
-                ) {
-                    providersState.forEach { provider ->
-                        DropdownMenuItem(
-                            text = { Text(text = provider.provider_name.toString()) },
-                            onClick = {
-                                selectedProviderState.value = provider
-                                expandedProvider = false
-                            }
-                        )
-                    }
+            ProviderDropdown(
+                providers = providersState,
+                selectedProvider = selectedProviderState.value,
+                onProviderSelected = { selectedProvider ->
+                    selectedProviderState.value = selectedProvider
+                    // Add any additional logic you need when a new provider is selected
                 }
-            }
+            )
         }
 
         Row(modifier = Modifier.fillMaxWidth()) {
-            // Sort Dropdown
-            ExposedDropdownMenuBox(
-                expanded = expandedSort,
-                onExpandedChange = { expandedSort = !expandedSort }
-            ) {
-                OutlinedTextField(
-                    value = selectedSortName,
-                    onValueChange = { },
-                    label = { Text("Sort By") },
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSort) },
-                    modifier = Modifier.menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = expandedSort,
-                    onDismissRequest = { expandedSort = false }
-                ) {
-                    sorts.forEach { sort ->
-                        DropdownMenuItem(
-                            text = { Text(text = sort.name) },
-                            onClick = {
-                                selectedSortId = sort.id
-                                expandedSort = false
-                            }
-                        )
-                    }
+            SortDropdown(
+                sortOptions = sorts,
+                selectedSortId = selectedSortId,
+                onSortSelected = { newSortId ->
+                    selectedSortId = newSortId.toString()
+                    // Implement any additional logic needed when a new sort option is selected
                 }
-            }
+            )
 
             Checkbox(
                 checked = excludeAnimation,
@@ -296,11 +209,127 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel = viewModel()) {
 
         ) {
             items(movies.size) { index ->
-                MovieItemView(movies[index])
+                MovieItemView(movies[index], movieViewModel)
             }
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GenreDropdown(
+    genres: List<Genre>,
+    selectedGenreId: Int,
+    onGenreSelected: (Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedGenreName = genres.first { it.id == selectedGenreId }.name
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedGenreName,
+            onValueChange = { },
+            readOnly = true,
+            label = { Text("Genre") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            genres.forEach { genre ->
+                DropdownMenuItem(
+                    text = { Text(text = genre.name) },
+                    onClick = {
+                        onGenreSelected(genre.id)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProviderDropdown(
+    providers: List<Provider>,
+    selectedProvider: Provider,
+    onProviderSelected: (Provider) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedProviderName = selectedProvider.provider_name
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedProviderName,
+            onValueChange = { /* Ignored as the field is read-only */ },
+            readOnly = true,
+            label = { Text("Watch Provider") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            providers.forEach { provider ->
+                DropdownMenuItem(
+                    text = { Text(text = provider.provider_name) },
+                    onClick = {
+                        onProviderSelected(provider)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SortDropdown(
+    sortOptions: List<SortOption>,
+    selectedSortId: String,
+    onSortSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedSortName = sortOptions.first { it.id == selectedSortId }.name
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedSortName,
+            onValueChange = { },
+            label = { Text("Sort By") },
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            sortOptions.forEach { sortOption ->
+                DropdownMenuItem(
+                    text = { Text(text = sortOption.name) },
+                    onClick = {
+                        onSortSelected(sortOption.id)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaginationControls(
@@ -345,11 +374,11 @@ fun PaginationControls(
 }
 
 @Composable
-fun MovieItemView(movie: MovieItem) {
+fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
+    val context = LocalContext.current
     val imageUrlBase = "https://image.tmdb.org/t/p/w342"
-    val logoUrlBase = "https://image.tmdb.org/t/p/w45"
     var genres = ""
-    var providerLogos = ""
+
     movie.genre_ids.forEach { genreId ->
         val genre = GenreData.genres.first { it.id == genreId }
         genres += genre.name + ", "
@@ -359,7 +388,7 @@ fun MovieItemView(movie: MovieItem) {
         modifier = Modifier
             .padding(8.dp)
             .width(180.dp)
-    //    elevation = 4.dp // Use CardDefaults for elevation
+        //    elevation = 4.dp // Use CardDefaults for elevation
     ) {
         Column {
             movie.poster_path?.let { posterPath ->
@@ -369,7 +398,10 @@ fun MovieItemView(movie: MovieItem) {
                     contentDescription = "Movie Poster",
                     modifier = Modifier
                         .height(270.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .clickable {
+                            viewModel.fetchTrailer(movie.id, "500f402322677a4df10fb559aa63f22b")
+                    },
                     contentScale = ContentScale.FillWidth
                 )
             }
@@ -390,8 +422,34 @@ fun MovieItemView(movie: MovieItem) {
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }
+        // Observe the trailer URL event
+        val trailerEvent by viewModel.trailerUrl.observeAsState()
+        trailerEvent?.getContentIfNotHandled()?.let { url ->
+            if (!url.isNullOrEmpty()) {
+                WebViewExample(url)
+            }
+        }
     }
 }
+
+@Composable
+fun WebViewExample(url: String) {
+    AndroidView(factory = { context ->
+        WebView(context).apply {
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: String?): Boolean {
+                    return false // Allow redirects within the WebView
+                }
+            }
+            settings.javaScriptEnabled = true
+            loadUrl(url)
+        }
+    }, update = { webView ->
+        webView.loadUrl(url)
+    })
+}
+
+
 
 @Composable
 fun MovieDetailsPage(movie: MovieItem) {
@@ -402,7 +460,3 @@ fun MovieDetailsPage(movie: MovieItem) {
         // Add more details as needed
     }
 }
-
-
-
-

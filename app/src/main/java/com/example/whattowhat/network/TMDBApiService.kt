@@ -4,7 +4,9 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 import com.example.whattowhat.model.MovieResponse
 import com.example.whattowhat.model.ProviderResponse
+import com.example.whattowhat.model.MovieVideosResponse
 import retrofit2.Response
+import retrofit2.http.Path
 
 interface TMDBApiService {
     @GET("movie/popular")
@@ -28,4 +30,10 @@ interface TMDBApiService {
         @Query("with_original_language") originalLanguage: String = "en",
         @Query("vote_count.gte") voteCount: Int = 250,
     ): Response<MovieDiscoverResponse>
+
+    @GET("movie/{movie_id}/videos")
+    suspend fun getMovieVideos(
+        @Path("movie_id") movieId: Int,
+        @Query("api_key") apiKey: String
+    ): Response<MovieVideosResponse>
 }
