@@ -35,8 +35,7 @@ class MovieViewModel : ViewModel() {
     private val _totalPages = MutableLiveData<Int>()
     val totalPages: LiveData<Int> = _totalPages
 
-    // Method to fetch movies by provider and genre
-    fun getMoviesByProviderAndGenre(apiKey: String, providerId: String, genreId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
+    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = null) {
         viewModelScope.launch {
             val withoutGenreId = if (excludeAnimation) "16" else null
             val response = RetrofitClient.instance.discoverMovies(
@@ -45,7 +44,9 @@ class MovieViewModel : ViewModel() {
                 genreId = genreId,
                 page = page,
                 sortBy = sortBy,
-                withoutGenreId = withoutGenreId
+                voteCount = voteCount,
+                withoutGenreId = withoutGenreId,
+                primaryReleaseYear = year
             )
             if (response.isSuccessful) {
                 _moviesState.postValue(response.body()?.results)
@@ -57,94 +58,36 @@ class MovieViewModel : ViewModel() {
         }
     }
 
-    fun getMoviesByProvider(apiKey: String, providerId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
-        viewModelScope.launch {
-            val withoutGenreId = if (excludeAnimation) "16" else null
-            val response = RetrofitClient.instance.discoverMovies(
-                apiKey = apiKey,
-                providerId = providerId,
-                page = page,
-                sortBy = sortBy,
-                withoutGenreId = withoutGenreId
-            )
-            if (response.isSuccessful) {
-                _moviesState.postValue(response.body()?.results)
-                _totalPages.postValue(response.body()?.total_pages)
-            } else {
-                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
-                _moviesState.postValue(emptyList())
-            }
-        }
-    }
-
-    fun getMoviesByGenre(apiKey: String, genreId: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
-        viewModelScope.launch {
-            val withoutGenreId = if (excludeAnimation) "16" else null
-            val response = RetrofitClient.instance.discoverMovies(
-                apiKey = apiKey,
-                genreId = genreId,
-                page = page,
-                sortBy = sortBy,
-                withoutGenreId = withoutGenreId
-            )
-            if (response.isSuccessful) {
-                _moviesState.postValue(response.body()?.results)
-                _totalPages.postValue(response.body()?.total_pages)
-            } else {
-                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
-                _moviesState.postValue(emptyList())
-            }
-        }
-    }
-
-    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean) {
-        viewModelScope.launch {
-            val withoutGenreId = if (excludeAnimation) "16" else null
-            val response = RetrofitClient.instance.discoverMovies(
-                apiKey = apiKey,
-                page = page,
-                sortBy = sortBy,
-                withoutGenreId = withoutGenreId
-            )
-            if (response.isSuccessful) {
-                _moviesState.postValue(response.body()?.results)
-                _totalPages.postValue(response.body()?.total_pages)
-            } else {
-                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
-                _moviesState.postValue(emptyList())
-            }
-        }
-    }
-
-    private val _trailerUrl = MutableLiveData<Event<String?>>()
-    val trailerUrl: LiveData<Event<String?>> = _trailerUrl
+    private val _videoId = MutableLiveData<Event<String?>>()
+    val videoId: LiveData<Event<String?>> = _videoId
 
     fun fetchTrailer(movieId: Int, apiKey: String) {
-        viewModelScope.launch(Dispatchers.IO) {  // Switch to IO Dispatcher
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.instance.getMovieVideos(movieId, apiKey)
                 if (response.isSuccessful) {
+                    // Filter for YouTube trailers
                     val trailers = response.body()?.results?.filter { it.isYoutubeTrailer() }
+                    // Get the first YouTube trailer, if available
                     trailers?.firstOrNull()?.let {
-                        val trailerUrl = "https://www.youtube.com/watch?v=${it.key}"
-                        Log.d("MovieViewModel", "Trailer URL: $trailerUrl") // Log the trailer URL
-                        _trailerUrl.postValue(Event("https://www.youtube.com/watch?v=${it.key}"))
+                        // Instead of constructing the full URL, just post the video ID
+                        _videoId.postValue(Event(it.key))
                     } ?: run {
                         Log.e("MovieViewModel", "No trailers found.")
+                        _videoId.postValue(Event(null)) // Post null if no trailer found
                     }
                 } else {
                     Log.e("MovieViewModel", "Error fetching trailer: ${response.errorBody()?.string()}")
+                    _videoId.postValue(Event(null)) // Post null on error
                 }
             } catch (e: Exception) {
                 Log.e("MovieViewModel", "Exception fetching trailer", e)
+                _videoId.postValue(Event(null)) // Post null on exception
             }
         }
     }
 
-    // Method to clear the trailer URL
-    fun clearTrailerUrl() {
-        _trailerUrl.postValue(null)
-    }
+
 
     open class Event<out T>(private val content: T) {
         var hasBeenHandled = false

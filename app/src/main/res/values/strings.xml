@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">What to What</string>
+    <string name="title_activity_youtube_player">YouTube Player</string>
 </resources>

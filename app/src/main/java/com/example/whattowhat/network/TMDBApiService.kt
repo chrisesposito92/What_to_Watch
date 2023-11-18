@@ -28,7 +28,8 @@ interface TMDBApiService {
         @Query("with_genres") genreId: String? = null,
         @Query("without_genres") withoutGenreId: String?,
         @Query("with_original_language") originalLanguage: String = "en",
-        @Query("vote_count.gte") voteCount: Int = 250,
+        @Query("vote_count.gte") voteCount: Int? = null,
+        @Query("primary_release_year") primaryReleaseYear: Int? = null,
     ): Response<MovieDiscoverResponse>
 
     @GET("movie/{movie_id}/videos")

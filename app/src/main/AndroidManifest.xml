@@ -24,6 +24,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".YouTubePlayerActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:label="@string/title_activity_youtube_player"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen" />
+
     </application>
 
 </manifest>

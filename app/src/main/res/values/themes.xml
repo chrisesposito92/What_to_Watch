@@ -2,4 +2,8 @@
 <resources>
 
     <style name="Theme.WhatToWhat" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Fullscreen theme for the YouTube player activity -->
+    <style name="Theme.AppCompat.Light.NoActionBar.FullScreen" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>
