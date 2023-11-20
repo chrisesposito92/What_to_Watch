@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
 import com.example.whattowhat.model.Genre
-import com.example.whattowhat.model.GenreData
+import com.example.whattowhat.model.MovieGenreData
 import com.example.whattowhat.model.MovieItem
 import com.example.whattowhat.model.Provider
 import com.example.whattowhat.model.SortOption
@@ -51,6 +51,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.TextField
 import androidx.core.util.rangeTo
 import com.example.whattowhat.model.NumberOfVotesOptions
+import com.example.whattowhat.model.TvGenreData
 import kotlinx.coroutines.launch
 import com.example.whattowhat.model.TvItem
 
@@ -83,7 +84,8 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
     )
     val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
     val providersState = listOf(allProvidersOption) + providersResponse.value
-    val genres = GenreData.genres
+    var isMoviesSelected by remember { mutableStateOf(true) }
+    val genres = MovieGenreData.genres
     val years = Years.years
     val votes = NumberOfVotesOptions.numOfVotes
     val ratings = (1 .. 10).toList()
@@ -105,7 +107,7 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
     val heightOfGridItem = 750.dp // Adjust this based on the size of your grid items
     var paddingBottom by remember { mutableStateOf(0.dp) }
     var filtersVisible by remember { mutableStateOf(true) }
-    var isMoviesSelected by remember { mutableStateOf(true) }
+
 
     // Fetch movies when currentPage changes
     LaunchedEffect(
@@ -116,7 +118,8 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
         excludeAnimation,
         selectedYear,
         selectedVote,
-        selectedRating
+        selectedRating,
+        isMoviesSelected
     ) {
         selectedProviderState.value?.let { provider ->
             val providerId = provider.provider_id?.toString()
@@ -210,7 +213,6 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
             }
 
         }
-
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -698,7 +700,7 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
     val context = LocalContext.current
     val imageUrlBase = "https://image.tmdb.org/t/p/w185"
     var genres = movie.genre_ids.joinToString(", ") { genreId ->
-        GenreData.genres.first { it.id == genreId }.name
+        MovieGenreData.genres.first { it.id == genreId }.name
     }
     var color by remember { mutableStateOf(Color.White) }
 
@@ -774,7 +776,7 @@ fun TvItemView(tv: TvItem, viewModel: MovieViewModel) {
     val context = LocalContext.current
     val imageUrlBase = "https://image.tmdb.org/t/p/w185"
     var genres = tv.genre_ids.joinToString(", ") { genreId ->
-        GenreData.genres.first { it.id == genreId }.name
+        TvGenreData.genres.first { it.id == genreId }.name
     }
     var color by remember { mutableStateOf(Color.White) }
 
