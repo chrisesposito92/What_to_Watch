@@ -8,9 +8,8 @@ import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.example.whattowhat.model.MovieItem
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.example.whattowhat.model.TvItem
 
 class MovieViewModel : ViewModel() {
     fun getMovieProviders(apiKey: String) = liveData(Dispatchers.IO) {
@@ -32,10 +31,13 @@ class MovieViewModel : ViewModel() {
     private val _moviesState = MutableLiveData<List<MovieItem>>()
     val moviesState: LiveData<List<MovieItem>> = _moviesState
 
+    private val _tvState = MutableLiveData<List<TvItem>>()
+    val tvState: LiveData<List<TvItem>> = _tvState
+
     private val _totalPages = MutableLiveData<Int>()
     val totalPages: LiveData<Int> = _totalPages
 
-    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = null) {
+    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = null, voteAverage: Int? = null) {
         viewModelScope.launch {
             val withoutGenreId = if (excludeAnimation) "16" else null
             val response = RetrofitClient.instance.discoverMovies(
@@ -45,6 +47,7 @@ class MovieViewModel : ViewModel() {
                 page = page,
                 sortBy = sortBy,
                 voteCount = voteCount,
+                voteAverage = voteAverage,
                 withoutGenreId = withoutGenreId,
                 primaryReleaseYear = year
             )
@@ -54,6 +57,30 @@ class MovieViewModel : ViewModel() {
             } else {
                 Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
                 _moviesState.postValue(emptyList())
+            }
+        }
+    }
+
+    fun getTV(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = null, voteAverage: Int? = null) {
+        viewModelScope.launch {
+            val withoutGenreId = if (excludeAnimation) "16" else null
+            val response = RetrofitClient.instance.discoverTV(
+                apiKey = apiKey,
+                providerId = providerId,
+                genreId = genreId,
+                page = page,
+                sortBy = sortBy,
+                voteCount = voteCount,
+                voteAverage = voteAverage,
+                withoutGenreId = withoutGenreId,
+                firstAirDateYear = year
+            )
+            if (response.isSuccessful) {
+                _tvState.postValue(response.body()?.results)
+                _totalPages.postValue(response.body()?.total_pages)
+            } else {
+                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+                _tvState.postValue(emptyList())
             }
         }
     }
