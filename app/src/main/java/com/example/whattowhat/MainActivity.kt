@@ -1,6 +1,7 @@
 
 package com.example.whattowhat
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -8,18 +9,14 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -35,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberImagePainter
 import com.example.whattowhat.model.Genre
 import com.example.whattowhat.model.MovieGenreData
 import com.example.whattowhat.model.MovieItem
@@ -45,36 +41,142 @@ import com.example.whattowhat.model.SortOptions
 import com.example.whattowhat.model.Years
 import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Switch
-import androidx.compose.material3.TextField
-import androidx.core.util.rangeTo
-import com.example.whattowhat.model.NumberOfVotesOptions
+import androidx.compose.ui.window.Dialog
+import coil.compose.rememberAsyncImagePainter
 import com.example.whattowhat.model.TvGenreData
 import kotlinx.coroutines.launch
 import com.example.whattowhat.model.TvItem
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.*
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+
 
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val movieViewModel: MovieViewModel = viewModel()
-            MovieApp(movieViewModel)
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = "providerSelection") {
+                composable("providerSelection") { ProviderSelectionScreen(viewModel(), navController) }
+                composable("movietvList/{selectedProviders}", arguments = listOf(navArgument("selectedProviders") { type = NavType.StringType })) { backStackEntry ->
+                    val selectedProviders = backStackEntry.arguments?.getString("selectedProviders")?.split(",")?.mapNotNull { it.toInt() }
+                    MovieTvListScreen(viewModel(), navController, selectedProviders)
+                }
+       //         composable("home") { MovieTvListScreen(viewModel(), navController) }
+                composable("movieDetail/{movieId}", arguments = listOf(navArgument("movieId") { type = NavType.StringType })) { backStackEntry ->
+                    val movieId = backStackEntry.arguments?.getString("movieId")
+                    MovieDetailsPage(movieId, viewModel(), navController)
+                }
+                composable("tvDetail/{tvId}", arguments = listOf(navArgument("tvId") { type = NavType.StringType })) { backStackEntry ->
+                    val tvId = backStackEntry.arguments?.getString("tvId")
+                    TvDetailsPage(tvId, viewModel(), navController)
+                }
+                // Add other composables for different routes as needed
+            }
         }
+
     }
 }
 
 @Composable
-fun MovieApp(movieViewModel: MovieViewModel) {
-    ProviderDetailScreen(movieViewModel)
+fun ProviderSelectionScreen(movieViewModel: MovieViewModel, navController: NavController) {
+
+    val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
+    val providersState = providersResponse.value
+    val sortedProviders = providersState.sortedBy { it.display_priority }
+    val selectedProviders = remember { mutableStateListOf<Provider>() }
+    var selectAll by remember { mutableStateOf(false) }
+
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxSize()
+    ) {
+        Text("Provider Selection", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Button(onClick = {
+                selectAll = !selectAll
+                if (selectAll) {
+                    selectedProviders.clear()
+                    selectedProviders.addAll(sortedProviders)
+                } else {
+                    selectedProviders.clear()
+                }
+            }) {
+                Text(if (selectAll) "Deselect All" else "Select All")
+            }
+
+            Button(onClick = {
+                navController.navigate("movietvList/${selectedProviders.joinToString(",") { it.provider_id.toString() }}")
+            }) {
+                Text("Continue")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Divider()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn {
+            items(sortedProviders.size) { index ->
+                val provider = sortedProviders[index]
+                ProviderListItem(provider, selectedProviders)
+            }
+        }
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnrememberedMutableState")
 @Composable
-fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
-    val context = LocalContext.current
+fun ProviderListItem(provider: Provider, selectedProviders: SnapshotStateList<Provider>) {
+    val isSelected = derivedStateOf { provider in selectedProviders }
+    Row(Modifier.clickable {
+        if (isSelected.value) {
+            selectedProviders.remove(provider)
+        } else {
+            selectedProviders.add(provider)
+        }
+    }) {
+        Switch(checked = isSelected.value, onCheckedChange = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(modifier = Modifier.padding(top = 6.dp), text = provider.provider_name)
+    }
+}
+
+
+@SuppressLint("SuspiciousIndentation")
+@Composable
+fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, selectedProviders: List<Int>?) {
     val allProvidersOption = Provider(
         provider_id = 0,
         provider_name = "All Providers",
@@ -82,31 +184,46 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
         logo_path = "",
         display_priorities = emptyMap()
     )
+    Log.e("MovieViewModel", "SELECTED PROVIDERS: ${selectedProviders}")
     val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
-    val providersState = listOf(allProvidersOption) + providersResponse.value
+    var providersState = listOf(allProvidersOption) + providersResponse.value
+    providersState = if (selectedProviders != null) {
+        providersState.filter { it.provider_id in selectedProviders }
+    } else {
+        providersState.filter { it.provider_id != 0 }
+    }
+
+    providersState = listOf(allProvidersOption) + providersState
     var isMoviesSelected by remember { mutableStateOf(true) }
-    val genres = MovieGenreData.genres
+    var genres by remember { mutableStateOf(MovieGenreData.genres) }
     val years = Years.years
-    val votes = NumberOfVotesOptions.numOfVotes
     val ratings = (1 .. 10).toList()
     var selectedRating by remember { mutableStateOf(ratings.first()) }
     var selectedYear by remember { mutableStateOf(years.first()) }
-    var selectedVote by remember { mutableStateOf(250) }
     var selectedGenreId by remember { mutableStateOf(genres.first().id) }
-    val selectedProviderState = remember { mutableStateOf(allProvidersOption) }
+    var selectedProviderState = remember { mutableStateOf(allProvidersOption) }
     val movies by movieViewModel.moviesState.observeAsState(initial = emptyList())
     val tv by movieViewModel.tvState.observeAsState(initial = emptyList())
     var currentPage by remember { mutableStateOf(1) }
-    val totalPages by movieViewModel.totalPages.observeAsState(1)
+    val totalPagesMovie by movieViewModel.totalPagesMovie.observeAsState(1)
+    val totalPagesTv by movieViewModel.totalPagesTv.observeAsState(1)
+    var totalPages by remember { mutableStateOf(1)}
     val sorts = SortOptions.sortOptions
     var selectedSortId by remember { mutableStateOf(sorts.first().id) }
     var excludeAnimation by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope() // Coroutine scope for launching suspend functions
     val gridState = rememberLazyGridState() // LazyGridState for LazyVerticalGrid
-    val numberOfColumns = 6 // Adjust this based on your grid setup
-    val heightOfGridItem = 750.dp // Adjust this based on the size of your grid items
-    var paddingBottom by remember { mutableStateOf(0.dp) }
     var filtersVisible by remember { mutableStateOf(true) }
+
+    LaunchedEffect(isMoviesSelected) {
+        genres = if (isMoviesSelected) {
+            MovieGenreData.genres
+        } else {
+            TvGenreData.genres
+        }
+
+        // Reset the selected genre when switching between Movies and TV
+        selectedGenreId = genres.first().id
+    }
 
 
     // Fetch movies when currentPage changes
@@ -117,7 +234,6 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
         selectedSortId,
         excludeAnimation,
         selectedYear,
-        selectedVote,
         selectedRating,
         isMoviesSelected
     ) {
@@ -126,529 +242,517 @@ fun ProviderDetailScreen(movieViewModel: MovieViewModel) {
             val genreId = selectedGenreId?.toString()
 
             Log.e("MovieViewModel", "GENRE ID: ${genreId}")
-
-            movieViewModel.getMovies(
-                apiKey = "500f402322677a4df10fb559aa63f22b",
-                genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                providerId = if(selectedProviderState.value == allProvidersOption) null else selectedProviderState.value.provider_id.toString(),
-                year = if (selectedYear == "All Years") null else selectedYear.toInt(),
-                voteCount = if (selectedVote == 0) null else selectedVote,
-                voteAverage = if (selectedRating == 0) null else selectedRating,
-                page = currentPage,
-                sortBy = selectedSortId,
-                excludeAnimation = excludeAnimation
-            )
-
-            movieViewModel.getTV(
-                apiKey = "500f402322677a4df10fb559aa63f22b",
-                genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                providerId = if(selectedProviderState.value == allProvidersOption) null else selectedProviderState.value.provider_id.toString(),
-                year = if (selectedYear == "All Years") null else selectedYear.toInt(),
-                voteCount = if (selectedVote == 0) null else selectedVote,
-                voteAverage = if (selectedRating == 0) null else selectedRating,
-                page = currentPage,
-                sortBy = selectedSortId,
-                excludeAnimation = excludeAnimation
-            )
+            if(isMoviesSelected){
+                if (selectedProviders != null) {
+                    val providerId2 = selectedProviders.joinToString(", ")
+                    Log.e("MovieViewModel", "PROVIDER ID: ${providerId2}")
+                    movieViewModel.getMovies(
+                        apiKey = "500f402322677a4df10fb559aa63f22b",
+                        genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
+                        providerId = if(provider.provider_id == 0) selectedProviders.joinToString("|") else providerId,
+                        year = if (selectedYear == "All Years") null else selectedYear.toInt(),
+                        voteAverage = if (selectedRating == 0) null else selectedRating,
+                        page = currentPage,
+                        sortBy = selectedSortId,
+                        excludeAnimation = excludeAnimation
+                    )
+                }
+            }else{
+                movieViewModel.getTV(
+                    apiKey = "500f402322677a4df10fb559aa63f22b",
+                    genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
+                    providerId = if(selectedProviderState.value == allProvidersOption) null else selectedProviderState.value.provider_id.toString(),
+                    year = if (selectedYear == "All Years") null else selectedYear.toInt(),
+                    voteAverage = if (selectedRating == 0) null else selectedRating,
+                    page = currentPage,
+                    sortBy = selectedSortId,
+                    excludeAnimation = excludeAnimation
+                )
+            }
         }
     }
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .padding(16.dp)
     ){
-        FilterRowOne(
-            genres = genres,
-            selectedGenreId = selectedGenreId,
-            onGenreSelected = { selectedGenreId = it },
-            years = years,
-            selectedYear = selectedYear,
-            onYearSelected = { selectedYear = it },
-            votes = votes,
-            selectedVote = selectedVote,
-            onVoteSelected = { selectedVote = it },
-            providers = providersState,
-            selectedProvider = selectedProviderState.value,
-            onProviderSelected = { selectedProviderState.value = it },
-            filtersVisible = filtersVisible
-        )
-        FilterRowTwo(
-            sortOptions = sorts,
-            selectedSortId = selectedSortId,
-            onSortSelected = { selectedSortId = it },
-            excludeAnimation = excludeAnimation,
-            onExcludeAnimationChanged = { excludeAnimation = it },
-            filtersVisible = filtersVisible,
-            ratings = ratings,
-            selectedRating = selectedRating,
-            onRatingSelected = { selectedRating = it }
-        )
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+        ){
+            FilterRow(
+                genres = genres,
+                selectedGenreId = selectedGenreId,
+                onGenreSelected = { selectedGenreId = it },
+                years = years,
+                selectedYear = selectedYear,
+                onYearSelected = { selectedYear = it },
+                providers = providersState,
+                selectedProvider = selectedProviderState.value,
+                onProviderSelected = { selectedProviderState.value = it },
+                filtersVisible = filtersVisible,
+                ratings = ratings,
+                selectedRating = selectedRating,
+                onRatingSelected = { selectedRating = it },
+                sortOptions = sorts,
+                selectedSortId = selectedSortId,
+                onSortSelected = { selectedSortId = it },
+                excludeAnimation = excludeAnimation,
+                onExcludeAnimationChanged = { excludeAnimation = it },
+                isMoviesSelected = isMoviesSelected,
+                onIsMoviesSelectedChanged = { isMoviesSelected = it }
+            )
+        }
 
         Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
         ){
             Button(
                 onClick = { filtersVisible = !filtersVisible },
-                modifier = Modifier.padding(start = 8.dp)
+                modifier = Modifier.padding(start = 20.dp)
             ) {
                 Text(if (filtersVisible) "Hide Filters" else "Show Filters")
             }
-            // Add this Switch to toggle between Movies and TV
-            Switch(
-                checked = isMoviesSelected,
-                onCheckedChange = { isMoviesSelected = it },
-                modifier = Modifier.padding(start = 8.dp)
-            )
-            Text(text = if (isMoviesSelected) "Movies" else "TV")
-        }
-
-        Row(modifier = Modifier.fillMaxWidth()){
-            // Pagination controls styled with MaterialTheme
-            PaginationControls(currentPage, totalPages) { newPage ->
-                currentPage = newPage
-            }
 
         }
-
-        Spacer(modifier = Modifier.height(10.dp))
 
         if (isMoviesSelected) {
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Adaptive(minSize = 154.dp)
-            ) {
-                items(movies.size) { index ->
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .onFocusChanged { focusState ->
-                                if (focusState.isFocused && index >= movies.size - numberOfColumns) {
-                                    paddingBottom = heightOfGridItem
-                                    coroutineScope.launch {
-                                        gridState.animateScrollToItem(index)
-                                    }
-                                } else {
-                                    paddingBottom = 0.dp
-                                }
-                            }
+            totalPages = totalPagesMovie
+            Column (
+                modifier = Modifier
+                    .fillMaxSize()
+            ){
+                Box (
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ){
+                    LazyVerticalGrid(
+                        state = gridState,
+                        //    columns = GridCells.Adaptive(minSize = 154.dp)
+                        columns = GridCells.Fixed(7)
                     ) {
-                        MovieItemView(movies[index], viewModel())
+                        items(movies.size) { index ->
+                            MovieItemView(movies[index], viewModel(), navController)
+                        }
                     }
                 }
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ){
+                    PaginationControls(currentPage, totalPages, gridState) { newPage ->
+                        currentPage = newPage
+                    }
+                }
+
             }
+
         } else {
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Adaptive(minSize = 154.dp)
-            ) {
-                items(tv.size) { index ->
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .onFocusChanged { focusState ->
-                                if (focusState.isFocused && index >= tv.size - numberOfColumns) {
-                                    paddingBottom = heightOfGridItem
-                                    coroutineScope.launch {
-                                        gridState.animateScrollToItem(index)
-                                    }
-                                } else {
-                                    paddingBottom = 0.dp
-                                }
-                            }
+            totalPages = totalPagesTv
+            Column (
+                modifier = Modifier
+                    .fillMaxSize()
+            ){
+                Box (
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                ){
+                    LazyVerticalGrid(
+                        state = gridState,
+                        //    columns = GridCells.Adaptive(minSize = 154.dp)
+                        columns = GridCells.Fixed(7)
                     ) {
-                        TvItemView(tv[index], viewModel()) // Replace with your function to display a TvItem
+                        items(tv.size) { index ->
+                            TvItemView(tv[index], viewModel(), navController)
+                        }
                     }
                 }
+
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ){
+                    PaginationControls(currentPage, totalPages, gridState) { newPage ->
+                        currentPage = newPage
+                    }
+                }
+
             }
         }
     }
 }
 
 @Composable
-fun FilterRowOne(
+fun FilterRow(
     genres: List<Genre>,
     selectedGenreId: Int,
     onGenreSelected: (Int) -> Unit,
     years: List<String>,
     selectedYear: String,
     onYearSelected: (String) -> Unit,
-    votes: List<Int>,
-    selectedVote: Int,
-    onVoteSelected: (Int) -> Unit,
     providers: List<Provider>,
     selectedProvider: Provider,
     onProviderSelected: (Provider) -> Unit,
-    filtersVisible: Boolean
-) {
-    if(filtersVisible){
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            GenreDropdown(
-                genres = genres,
-                selectedGenreId = selectedGenreId,
-                onGenreSelected = onGenreSelected
-            )
-            YearDropdown(
-                years = years,
-                selectedYear = selectedYear,
-                onYearSelected = onYearSelected
-            )
-            ProviderDropdown(
-                providers = providers,
-                selectedProvider = selectedProvider,
-                onProviderSelected = onProviderSelected
-            )
-            MinVoteCountDropdown(
-                votes = votes,
-                selectedVote = selectedVote,
-                onVoteSelected = onVoteSelected
-            )
-        }
-    }
-}
-
-@Composable
-fun FilterRowTwo(
+    filtersVisible: Boolean,
+    ratings: List<Int>,
+    selectedRating: Int,
+    onRatingSelected: (Int) -> Unit,
     sortOptions: List<SortOption>,
     selectedSortId: String,
     onSortSelected: (String) -> Unit,
     excludeAnimation: Boolean,
     onExcludeAnimationChanged: (Boolean) -> Unit,
-    filtersVisible: Boolean,
-    ratings: List<Int>,
-    selectedRating: Int,
-    onRatingSelected: (Int) -> Unit
+    isMoviesSelected: Boolean,
+    onIsMoviesSelectedChanged: (Boolean) -> Unit
 ) {
     if(filtersVisible){
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SortDropdown(
-                sortOptions = sortOptions,
-                selectedSortId = selectedSortId,
-                onSortSelected = onSortSelected
-            )
-            MinRatingDropdown(
-                ratings = ratings,
-                selectedRating = selectedRating,
-                onRatingSelected = onRatingSelected
-            )
-            Checkbox(
-                checked = excludeAnimation,
-                onCheckedChange = onExcludeAnimationChanged,
-                modifier = Modifier.padding(end = 8.dp)
-            )
-            Text(text = "Exclude Animation")
+        SortDialogDropdown(
+            sortOptions = sortOptions,
+            selectedSortId = selectedSortId,
+            onSortSelected = onSortSelected
+        )
+        GenreDialogDropdown(
+            genres = genres,
+            selectedGenreId = selectedGenreId,
+            onGenreSelected = onGenreSelected
+        )
+        YearDialogDropdown(
+            years = years,
+            selectedYear = selectedYear,
+            onYearSelected = onYearSelected
+        )
+        MinRatingDialogDropdown(
+            ratings = ratings,
+            selectedRating = selectedRating,
+            onRatingSelected = onRatingSelected
+        )
+        ProviderDialogDropdown(
+            providers = providers,
+            selectedProvider = selectedProvider,
+            onProviderSelected = onProviderSelected
+        )
+        IncludeAnimationDialogDropdown(
+            excludeAnimation = excludeAnimation,
+            onExcludeAnimationChanged = onExcludeAnimationChanged
+        )
+        MoviesOrTvDialogDropdown(
+            isMoviesSelected = isMoviesSelected,
+            onIsMoviesSelectedChanged = onIsMoviesSelectedChanged
+        )
+    }
+}
 
+@Composable
+fun IncludeAnimationDialogDropdown(
+    excludeAnimation: Boolean,
+    onExcludeAnimationChanged: (Boolean) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = if (excludeAnimation) "Exclude Animation" else "Include Animation")
+    }
+
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { showDialog = false }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .padding(16.dp)
+            ) {
+                LazyColumn {
+                    items(2) { index ->
+                        val excludeAnimation = index == 0
+                        Text(
+                            text = if (excludeAnimation) "Exclude Animation" else "Include Animation",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onExcludeAnimationChanged(excludeAnimation)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GenreDropdown(
+fun MoviesOrTvDialogDropdown(
+    isMoviesSelected: Boolean,
+    onIsMoviesSelectedChanged: (Boolean) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = if (isMoviesSelected) "Movies" else "TV")
+    }
+
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { showDialog = false }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                LazyColumn {
+                    items(2) { index ->
+                        val isMoviesSelected = index == 0
+                        Text(
+                            text = if (isMoviesSelected) "Movies" else "TV",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onIsMoviesSelectedChanged(isMoviesSelected)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun GenreDialogDropdown(
     genres: List<Genre>,
     selectedGenreId: Int,
     onGenreSelected: (Int) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedGenreName = genres.first { it.id == selectedGenreId }.name
+    var showDialog by remember { mutableStateOf(false) }
+    val selectedGenreName = genres.firstOrNull { it.id == selectedGenreId }?.name ?: "All Genres"
 
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = selectedGenreName)
+    }
+
+    if (showDialog) {
+        Dialog(
+            onDismissRequest = { showDialog = false }
         ) {
-            TextField(
-                value = selectedGenreName,
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Genre") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
 
+            Surface(
+                modifier = Modifier
+//                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                genres.forEach { genre ->
-                    DropdownMenuItem(
-                        text = { Text(text = genre.name) },
-                        onClick = {
-                            onGenreSelected(genre.id)
-                            expanded = false
-                        }
-                    )
+                LazyColumn {
+                    items(genres.size) { index ->
+                        val genre = genres[index]
+                        Text(
+                            text = genre.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onGenreSelected(genre.id)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun YearDropdown(
+fun YearDialogDropdown(
     years: List<String>,
     selectedYear: String,
     onYearSelected: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
-        ) {
-            TextField(
-                value = selectedYear,
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Year") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+    var showDialog by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = selectedYear)
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                years.forEach { year ->
-                    DropdownMenuItem(
-                        text = { Text(text = year) },
-                        onClick = {
-                            onYearSelected(year)
-                            expanded = false
-                        }
-                    )
+                LazyColumn {
+                    items(years.size) { index ->
+                        val year = years[index]
+                        Text(
+                            text = year,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onYearSelected(year)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MinVoteCountDropdown(
-    votes: List<Int>,
-    selectedVote: Int,
-    onVoteSelected: (Int) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
-        ) {
-            TextField(
-                value = selectedVote.toString(),
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Min Number of Votes") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                votes.forEach { vote ->
-                    DropdownMenuItem(
-                        text = { Text(text = vote.toString()) },
-                        onClick = {
-                            onVoteSelected(vote)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MinRatingDropdown(
-    ratings: List<Int>,
-    selectedRating: Int,
-    onRatingSelected: (Int) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
-        ) {
-            TextField(
-                value = selectedRating.toString(),
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Min Rating") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                ratings.forEach { rating ->
-                    DropdownMenuItem(
-                        text = { Text(text = rating.toString()) },
-                        onClick = {
-                            onRatingSelected(rating)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProviderDropdown(
-    providers: List<Provider>,
-    selectedProvider: Provider,
-    onProviderSelected: (Provider) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedProviderName = selectedProvider.provider_name
-
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
-        ) {
-            TextField(
-                value = selectedProviderName,
-                onValueChange = { /* Ignored as the field is read-only */ },
-                readOnly = true,
-                label = { Text("Watch Provider") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                providers.forEach { provider ->
-                    DropdownMenuItem(
-                        text = { Text(text = provider.provider_name) },
-                        onClick = {
-                            onProviderSelected(provider)
-                            expanded = false
-                        }
-                    )
-                }
-            }
-        }
-    }
-}
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SortDropdown(
+fun SortDialogDropdown(
     sortOptions: List<SortOption>,
     selectedSortId: String,
     onSortSelected: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
     val selectedSortName = sortOptions.first { it.id == selectedSortId }.name
 
-    Box (
-        modifier = Modifier
-            .clickable { expanded = !expanded }
-            .width(200.dp)
-    ){
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier
-                .width(200.dp)
-        ) {
-            TextField(
-                value = selectedSortName,
-                onValueChange = { },
-                label = { Text("Sort By") },
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = selectedSortName)
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
             ) {
-                sortOptions.forEach { sortOption ->
-                    DropdownMenuItem(
-                        text = { Text(text = sortOption.name) },
-                        onClick = {
-                            onSortSelected(sortOption.id)
-                            expanded = false
-                        }
-                    )
+                LazyColumn {
+                    items(sortOptions.size) { index ->
+                        val sort = sortOptions[index]
+                        Text(
+                            text = sort.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSortSelected(sort.id)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+fun MinRatingDialogDropdown(
+    ratings: List<Int>,
+    selectedRating: Int,
+    onRatingSelected: (Int) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = selectedRating.toString())
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                LazyColumn {
+                    items(ratings.size) { index ->
+                        val rating = ratings[index]
+                        Text(
+                            text = rating.toString(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onRatingSelected(rating)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProviderDialogDropdown(
+    providers: List<Provider>,
+    selectedProvider: Provider,
+    onProviderSelected: (Provider) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+    val selectedProviderName = selectedProvider.provider_name
+
+
+    OutlinedButton(onClick = { showDialog = true }) {
+        Text(text = selectedProviderName)
+    }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                LazyColumn {
+                    items(providers.size) { index ->
+                        val provider = providers[index]
+                        Text(
+                            text = provider.provider_name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onProviderSelected(provider)
+                                    showDialog = false
+                                }
+                                .padding(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+@SuppressLint("SuspiciousIndentation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaginationControls(
     currentPage: Int,
     totalPages: Int,
+    gridState: LazyGridState,
     onPageChange: (Int) -> Unit
 ) {
-    val currentPageString = currentPage.toString()
-    val textFieldWidth = (currentPageString.length * 10).dp
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
+    val currentPageString = currentPage.toString() + " of " + totalPages.toString()
+    val textFieldWidth = (currentPageString.length * 10 + 45).dp
+    LaunchedEffect(currentPage) {
+        gridState.scrollToItem(index = 0)
+    }
         Button(
             onClick = { onPageChange(1) },
             enabled = currentPage > 2,
@@ -665,22 +769,26 @@ fun PaginationControls(
         }
 
         // Current Page TextField with outlined style
-        OutlinedTextField(
-            value = currentPage.toString(),
-            onValueChange = { newValue -> onPageChange(newValue.toIntOrNull() ?: currentPage) },
-            singleLine = true,
-            readOnly = true,
-            textStyle = MaterialTheme.typography.bodyLarge,
+        Text(
+            text = currentPageString,
+            style = TextStyle(
+                fontSize = 24.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            ),
+            textAlign = TextAlign.Center,
             modifier = Modifier
-                .width(64.dp)
-                .padding(horizontal = 8.dp),
+                .width(textFieldWidth)
+                .padding(8.dp)
+                .border(1.dp, Color.Black, shape = RoundedCornerShape(50))
             // More MaterialTheme styling
         )
 
         Button(
-            onClick = { onPageChange(currentPage + 1) },
-            enabled = currentPage < totalPages,
-            // Apply MaterialTheme styling
+            onClick = {
+                onPageChange(currentPage + 1)
+            },
+            enabled = currentPage < totalPages
         ) {
             Text("Next")
         }
@@ -692,18 +800,17 @@ fun PaginationControls(
         ) {
             Text("Last")
         }
-    }
+
 }
 
 @Composable
-fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
+fun MovieItemView(movie: MovieItem, movieViewModel: MovieViewModel, navController: NavController) {
     val context = LocalContext.current
-    val imageUrlBase = "https://image.tmdb.org/t/p/w185"
+    val imageUrlBase = "https://image.tmdb.org/t/p/w780"
     var genres = movie.genre_ids.joinToString(", ") { genreId ->
         MovieGenreData.genres.first { it.id == genreId }.name
     }
     var color by remember { mutableStateOf(Color.White) }
-
     Card(
         modifier = Modifier
             .padding(5.dp)
@@ -711,20 +818,21 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
             .onFocusChanged { focusState ->
                 color = if (focusState.isFocused) Color.Magenta else Color.White
             }
-            .border(5.dp, color, shape = RoundedCornerShape(10))
+            .border(2.dp, color, shape = RoundedCornerShape(10))
+            .clickable {
+                //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
+                Log.e("MovieViewModel", "MOVIE ID: ${movie.id}")
+                navController.navigate("movieDetail/${movie.id}")
+            },
     ) {
-        Column {
             movie.poster_path?.let { posterPath ->
                 val imageUrl = "$imageUrlBase$posterPath"
                 Image(
-                    painter = rememberImagePainter(imageUrl),
+                    painter = rememberAsyncImagePainter(imageUrl),
                     contentDescription = "Movie Poster",
                     modifier = Modifier
                         .aspectRatio(2 / 3f)
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.fetchTrailer(movie.id, "500f402322677a4df10fb559aa63f22b")
-                        },
+                        .fillMaxWidth(),
                     contentScale = ContentScale.FillHeight
                 )
             }
@@ -752,13 +860,13 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
                     fontSize = 10.sp, // Set the font size to 12 sp for example
                     color = Color.Black // Optional: if you want to change the color
                 ),
-                modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 20.dp)
+                modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
             )
-        }
+
     }
 
     // Observe the video ID LiveData.
-    val videoIdEvent by viewModel.videoId.observeAsState()
+    val videoIdEvent by movieViewModel.videoMovieId.observeAsState()
     videoIdEvent?.getContentIfNotHandled()?.let { videoId ->
         if (!videoId.isNullOrEmpty()) {
             // When the video ID is available, launch the YouTubePlayerActivity with the ID.
@@ -772,7 +880,7 @@ fun MovieItemView(movie: MovieItem, viewModel: MovieViewModel) {
 }
 
 @Composable
-fun TvItemView(tv: TvItem, viewModel: MovieViewModel) {
+fun TvItemView(tv: TvItem, movieViewModel: MovieViewModel, navController: NavController ) {
     val context = LocalContext.current
     val imageUrlBase = "https://image.tmdb.org/t/p/w185"
     var genres = tv.genre_ids.joinToString(", ") { genreId ->
@@ -787,20 +895,22 @@ fun TvItemView(tv: TvItem, viewModel: MovieViewModel) {
             .onFocusChanged { focusState ->
                 color = if (focusState.isFocused) Color.Magenta else Color.White
             }
-            .border(5.dp, color, shape = RoundedCornerShape(10))
+            .border(2.dp, color, shape = RoundedCornerShape(10))
+            .clickable {
+                //    movieViewModel.fetchTrailerTv(tv.id, "500f402322677a4df10fb559aa63f22b")
+                navController.navigate("tvDetail/${tv.id}")
+            },
     ) {
-        Column {
+
             tv.poster_path?.let { posterPath ->
                 val imageUrl = "$imageUrlBase$posterPath"
                 Image(
-                    painter = rememberImagePainter(imageUrl),
+                    painter = rememberAsyncImagePainter(imageUrl),
                     contentDescription = "Movie Poster",
                     modifier = Modifier
                         .aspectRatio(2 / 3f)
-                        .fillMaxWidth()
-                        .clickable {
-                            viewModel.fetchTrailer(tv.id, "500f402322677a4df10fb559aa63f22b")
-                        },
+                        .fillMaxWidth(),
+
                     contentScale = ContentScale.FillHeight
                 )
             }
@@ -828,13 +938,13 @@ fun TvItemView(tv: TvItem, viewModel: MovieViewModel) {
                     fontSize = 10.sp, // Set the font size to 12 sp for example
                     color = Color.Black // Optional: if you want to change the color
                 ),
-                modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 20.dp)
+                modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
             )
-        }
+
     }
 
     // Observe the video ID LiveData.
-    val videoIdEvent by viewModel.videoId.observeAsState()
+    val videoIdEvent by movieViewModel.videoTvId.observeAsState()
     videoIdEvent?.getContentIfNotHandled()?.let { videoId ->
         if (!videoId.isNullOrEmpty()) {
             // When the video ID is available, launch the YouTubePlayerActivity with the ID.
@@ -848,11 +958,260 @@ fun TvItemView(tv: TvItem, viewModel: MovieViewModel) {
 }
 
 @Composable
-fun MovieDetailsPage(movie: MovieItem) {
+fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navController: NavController) {
+    // Assuming movieDetails is a LiveData object that holds the details
+    val movieDetails by movieViewModel.movieDetails.observeAsState()
+    val movieProviders by movieViewModel.movieProviders.observeAsState()
+    val movieRecommendations by movieViewModel.movieRecommendations.observeAsState()
+    val context = LocalContext.current
+    val videoMovieId by movieViewModel.videoMovieId.observeAsState()
+
+    LaunchedEffect(movieId) {
+        movieViewModel.fetchMovieDetails(movieId!!.toInt(), "500f402322677a4df10fb559aa63f22b")
+        movieViewModel.fetchMovieWatchProviders(movieId!!.toInt(), "500f402322677a4df10fb559aa63f22b")
+        movieViewModel.getMovieRecommendations(movieId!!.toInt(), "500f402322677a4df10fb559aa63f22b")
+
+    }
+
+    Log.e("MovieViewModel", "MOVIE ID: ${movieId}")
+    Log.e("MovieViewModel", "MOVIE DETAILS: ${movieDetails}")
+    Log.e("MovieViewModel", "MOVIE PROVIDERS: ${movieProviders}")
+    Log.e("MovieViewModel", "MOVIE RECOMMENDATIONS: ${movieRecommendations}")
+
+    movieDetails?.let { movie ->
+        Box {
+            // Backdrop image
+            BackdropImage(movie.backdrop_path)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .align(Alignment.BottomStart)
+            ) {
+                // Title
+                Text(
+                    text = "${movie.title} (${movie.release_date.take(4)})",
+                    style = MaterialTheme.typography.displayMedium.copy(color = Color.White),
+                    modifier = Modifier.shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Rating
+                Row {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Rating",
+                        tint = Color.Yellow
+                    )
+                    Text(
+                        text = "${movie.vote_average} / 10",
+                        style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .shadow(2.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                // Runtime
+                Text(
+                    text = movie.runtime.toString() + " minutes",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
+                    modifier = Modifier.shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Genres
+                Text(
+                    text = "${movie.genres.joinToString(", ") { it.name }}",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
+                    modifier = Modifier.shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // Providers
+                movieProviders?.let { providers ->
+                    LazyRow {
+                        items(providers.size) { index ->
+                            providers[index].let { provider ->
+                                ProviderLogo(provider)
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                // Overview
+                Text(
+                    text = movie.overview,
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color.White),
+                    modifier = Modifier.shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                // Play Trailer button
+                Button(
+                    onClick = {
+                        movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
+                    },
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Play Trailer")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                // Movie Recommendations Section
+
+                var movieRecommendationsFiltered = movieRecommendations?.filter { it.vote_count >= 250 }?.distinctBy { it.id }
+                movieRecommendationsFiltered?.let { recommendations ->
+                    Text(
+                        text = "Similar Movies",
+                        style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
+                        modifier = Modifier.padding(top = 0.dp, bottom = 8.dp)
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+               //         contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        items(recommendations.size) { index ->
+                            var movie = recommendations[index]
+                        //    var nextMovie = recommendations.getOrNull(index + 1)
+                        //    if(movie.vote_count >= 250 && movie != nextMovie){
+                                RecommendationCard(movie, movieViewModel, navController)
+                        //    }
+                        }
+                    }
+                }
+
+            }
+        }
+    } ?: Text(text = "Loading movie details...")
+
+    // Observe the video ID LiveData.
+    val videoIdEvent by movieViewModel.videoMovieId.observeAsState()
+    videoIdEvent?.getContentIfNotHandled()?.let { videoId ->
+        if (!videoId.isNullOrEmpty()) {
+            // When the video ID is available, launch the YouTubePlayerActivity with the ID.
+            val intent = Intent(context, YouTubePlayerActivity::class.java)
+            intent.putExtra("VIDEO_ID", videoId)
+            context.startActivity(intent)
+        } else {
+            Toast.makeText(context, "Video not available", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
+@Composable
+fun RecommendationCard(movie: MovieItem, movieViewModel: MovieViewModel = viewModel(), navController: NavController) {
+    Box(
+        modifier = Modifier
+            .width(150.dp)
+            .height(250.dp)
+            .padding(4.dp)
+            .clickable {
+                //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
+                Log.e("MovieViewModel", "MOVIE ID: ${movie.id}")
+                navController.navigate("movieDetail/${movie.id}")
+            }
+    ) {
+        // Backdrop image
+        RecommendationImage(movie.backdrop_path)
+        Column (
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .align(Alignment.BottomStart)
+        ){
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                modifier = Modifier
+                //    .padding(4.dp)
+                    .align(Alignment.CenterHorizontally), // Center text horizontally
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = "Rating: ${movie.vote_average}",
+                style = MaterialTheme.typography.labelMedium.copy(color = Color.White),
+                modifier = Modifier
+                //    .padding(4.dp)
+                    .align(Alignment.CenterHorizontally), // Center text horizontally
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+     //   }
+    }
+}
+
+
+
+@Composable
+fun ProviderLogo(provider: Provider) {
+    val imageUrl = "https://image.tmdb.org/t/p/original${provider.logo_path}"
+    Image(
+        painter = rememberAsyncImagePainter(imageUrl),
+        contentDescription = "Provider Logo",
+        modifier = Modifier
+            .size(50.dp) // You can adjust the size as needed
+            .padding(4.dp)
+            .clip(RoundedCornerShape(20))
+    )
+}
+
+@Composable
+fun RecommendationImage(backdropPath: String?) {
+    val imageUrlBase = "https://image.tmdb.org/t/p/original"
+    backdropPath?.let {
+        val imageUrl = "$imageUrlBase$it"
+        Image(
+            painter = rememberAsyncImagePainter(imageUrl),
+            contentDescription = "Backdrop Image",
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight() // Adjust height accordingly
+                .clip(RoundedCornerShape(20)),
+            contentScale = ContentScale.Crop,
+            alpha = 0.9f
+        )
+        // Dark gradient overlay if needed
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+
+        )
+    }
+}
+
+@Composable
+fun BackdropImage(backdropPath: String?) {
+    val imageUrlBase = "https://image.tmdb.org/t/p/original"
+    backdropPath?.let {
+        val imageUrl = "$imageUrlBase$it"
+        Log.e("MovieViewModel", "IMAGE URL: ${imageUrl}")
+        Image(
+            painter = rememberAsyncImagePainter(imageUrl),
+            contentDescription = "Backdrop Image",
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(), // Adjust height accordingly
+            contentScale = ContentScale.Crop,
+            alpha = 0.5f
+        )
+        // Dark gradient overlay if needed
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black),
+                        startY = 300f // Adjust gradient to your liking
+                    )
+                )
+        )
+    }
+}
+
+@Composable
+fun TvDetailsPage(tvId: String?, movieViewModel: MovieViewModel, navController: NavController) {
     Column {
-        Text(text = movie.title)
-        Text(text = "Rating: ${movie.vote_average}")
-        Text(text = "Release date: ${movie.release_date}")
+        Text(text = tvId.toString() )
         // Add more details as needed
     }
 }

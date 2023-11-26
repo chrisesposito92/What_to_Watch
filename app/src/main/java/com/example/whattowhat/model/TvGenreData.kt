@@ -18,6 +18,6 @@ object TvGenreData {
         Genre(10766, "Soap"),
         Genre(10767, "Talk"),
         Genre(10768, "War & Politics"),
-        Genre(37, "Western"
+        Genre(37, "Western")
     )
 }
