@@ -40,13 +40,11 @@ import com.example.whattowhat.model.SortOption
 import com.example.whattowhat.model.SortOptions
 import com.example.whattowhat.model.Years
 import androidx.compose.foundation.border
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
 import coil.compose.rememberAsyncImagePainter
 import com.example.whattowhat.model.TvGenreData
-import kotlinx.coroutines.launch
 import com.example.whattowhat.model.TvItem
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -73,7 +71,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-
+import com.example.whattowhat.model.ProviderData
 
 
 class MainActivity : ComponentActivity() {
@@ -82,7 +80,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "providerSelection") {
-                composable("providerSelection") { ProviderSelectionScreen(viewModel(), navController) }
+                composable("providerSelection") { ProviderSelectionScreen(navController) }
                 composable("movietvList/{selectedProviders}", arguments = listOf(navArgument("selectedProviders") { type = NavType.StringType })) { backStackEntry ->
                     val selectedProviders = backStackEntry.arguments?.getString("selectedProviders")?.split(",")?.mapNotNull { it.toInt() }
                     MovieTvListScreen(viewModel(), navController, selectedProviders)
@@ -104,11 +102,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ProviderSelectionScreen(movieViewModel: MovieViewModel, navController: NavController) {
+fun ProviderSelectionScreen(navController: NavController) {
 
-    val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
-    val providersState = providersResponse.value
-    val sortedProviders = providersState.sortedBy { it.display_priority }
+    var providers = ProviderData.providers
+    val sortedProviders = providers.sortedBy { it.display_priority }
     val selectedProviders = remember { mutableStateListOf<Provider>() }
     var selectAll by remember { mutableStateOf(false) }
 
@@ -177,31 +174,20 @@ fun ProviderListItem(provider: Provider, selectedProviders: SnapshotStateList<Pr
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, selectedProviders: List<Int>?) {
-    val allProvidersOption = Provider(
-        provider_id = 0,
-        provider_name = "All Providers",
-        display_priority = -1,
-        logo_path = ""
-    )
-    Log.e("MovieViewModel", "SELECTED PROVIDERS: ${selectedProviders}")
-    val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
-    var providersState = listOf(allProvidersOption) + providersResponse.value
-    providersState = if (selectedProviders != null) {
-        providersState.filter { it.provider_id in selectedProviders }
-    } else {
-        providersState.filter { it.provider_id != 0 }
-    }
+fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, selectedProviderIds: List<Int>?) {
 
-    providersState = listOf(allProvidersOption) + providersState
+    Log.e("MovieViewModel", "SELECTED PROVIDERS: ${selectedProviderIds}")
+
     var isMoviesSelected by remember { mutableStateOf(true) }
     var genres by remember { mutableStateOf(MovieGenreData.genres) }
     val years = Years.years
     val ratings = (1 .. 10).toList()
-    var selectedRating by remember { mutableStateOf(ratings.first()) }
+    var providers = ProviderData.providers.filter { it.provider_id == 0 || it.provider_id in selectedProviderIds.orEmpty() }
+    Log.e("MovieViewModel", "PROVIDERS: ${providers}")
+    var selectedRating by remember { mutableIntStateOf(ratings.first()) }
     var selectedYear by remember { mutableStateOf(years.first()) }
-    var selectedGenreId by remember { mutableStateOf(genres.first().id) }
-    var selectedProviderState = remember { mutableStateOf(allProvidersOption) }
+    var selectedGenreId by remember { mutableIntStateOf(genres.first().id) }
+    var selectedProviderId by remember { mutableIntStateOf(providers.first().provider_id) }
     val movies by movieViewModel.moviesState.observeAsState(initial = emptyList())
     val tv by movieViewModel.tvState.observeAsState(initial = emptyList())
     var currentPage by remember { mutableStateOf(1) }
@@ -230,47 +216,44 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
     LaunchedEffect(
         currentPage,
         selectedGenreId,
-        selectedProviderState.value,
+        selectedProviderId,
         selectedSortId,
         excludeAnimation,
         selectedYear,
         selectedRating,
         isMoviesSelected
     ) {
-        selectedProviderState.value?.let { provider ->
-            val providerId = provider.provider_id?.toString()
-            val genreId = selectedGenreId?.toString()
+        val genreId = selectedGenreId?.toString()
 
-            Log.e("MovieViewModel", "GENRE ID: ${genreId}")
-            if(isMoviesSelected){
-                if (selectedProviders != null) {
-                    val providerId2 = selectedProviders.joinToString(", ")
-                    Log.e("MovieViewModel", "PROVIDER ID: ${providerId2}")
-                    movieViewModel.getMovies(
-                        apiKey = "500f402322677a4df10fb559aa63f22b",
-                        genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                        providerId = if(provider.provider_id == 0) selectedProviders.joinToString("|") else providerId,
-                        year = if (selectedYear == "All Years") null else selectedYear.toInt(),
-                        voteAverage = if (selectedRating == 0) null else selectedRating,
-                        page = currentPage,
-                        sortBy = selectedSortId,
-                        excludeAnimation = excludeAnimation
-                    )
-                }
-            }else{
-                movieViewModel.getTV(
-                    apiKey = "500f402322677a4df10fb559aa63f22b",
-                    genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                    providerId = if(selectedProviderState.value == allProvidersOption) null else selectedProviderState.value.provider_id.toString(),
-                    year = if (selectedYear == "All Years") null else selectedYear.toInt(),
-                    voteAverage = if (selectedRating == 0) null else selectedRating,
-                    page = currentPage,
-                    sortBy = selectedSortId,
-                    excludeAnimation = excludeAnimation
-                )
-            }
+        val providerId = if(selectedProviderId == -1) selectedProviderIds?.joinToString("|") else selectedProviderId.toString()
+        Log.e("MovieViewModel", "PROVIDER ID: ${providerId}")
+
+        Log.e("MovieViewModel", "GENRE ID: ${genreId}")
+        if(isMoviesSelected){
+            movieViewModel.getMovies(
+                apiKey = "500f402322677a4df10fb559aa63f22b",
+                genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
+                providerId = if(selectedProviderId == 0) selectedProviderIds?.joinToString("|") else selectedProviderId.toString(),
+                year = if (selectedYear == "All Years") null else selectedYear.toInt(),
+                voteAverage = if (selectedRating == 0) null else selectedRating,
+                page = currentPage,
+                sortBy = selectedSortId,
+                excludeAnimation = excludeAnimation
+            )
+        }else{
+            movieViewModel.getTV(
+                apiKey = "500f402322677a4df10fb559aa63f22b",
+                genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
+                providerId = if(selectedProviderId == -1) selectedProviderIds?.joinToString("|") else selectedProviderId.toString(),
+                year = if (selectedYear == "All Years") null else selectedYear.toInt(),
+                voteAverage = if (selectedRating == 0) null else selectedRating,
+                page = currentPage,
+                sortBy = selectedSortId,
+                excludeAnimation = excludeAnimation
+            )
         }
     }
+
 
     Column(
         modifier = Modifier
@@ -289,9 +272,9 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
                 years = years,
                 selectedYear = selectedYear,
                 onYearSelected = { selectedYear = it },
-                providers = providersState,
-                selectedProvider = selectedProviderState.value,
-                onProviderSelected = { selectedProviderState.value = it },
+                providers = providers,
+                selectedProvider = selectedProviderId,
+                onProviderSelected = { selectedProviderId = it },
                 filtersVisible = filtersVisible,
                 ratings = ratings,
                 selectedRating = selectedRating,
@@ -403,8 +386,8 @@ fun FilterRow(
     selectedYear: String,
     onYearSelected: (String) -> Unit,
     providers: List<Provider>,
-    selectedProvider: Provider,
-    onProviderSelected: (Provider) -> Unit,
+    selectedProvider: Int,
+    onProviderSelected: (Int) -> Unit,
     filtersVisible: Boolean,
     ratings: List<Int>,
     selectedRating: Int,
@@ -438,6 +421,7 @@ fun FilterRow(
             selectedRating = selectedRating,
             onRatingSelected = onRatingSelected
         )
+        Log.e("MovieViewModel", "PROVIDERS: ${providers}")
         ProviderDialogDropdown(
             providers = providers,
             selectedProvider = selectedProvider,
@@ -699,11 +683,11 @@ fun MinRatingDialogDropdown(
 @Composable
 fun ProviderDialogDropdown(
     providers: List<Provider>,
-    selectedProvider: Provider,
-    onProviderSelected: (Provider) -> Unit
+    selectedProvider: Int,
+    onProviderSelected: (Int) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    val selectedProviderName = selectedProvider.provider_name
+    val selectedProviderName = providers.firstOrNull { it.provider_id == selectedProvider }?.provider_name ?: "All Providers"
 
 
     OutlinedButton(onClick = { showDialog = true }) {
@@ -725,7 +709,7 @@ fun ProviderDialogDropdown(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    onProviderSelected(provider)
+                                    onProviderSelected(provider.provider_id)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -740,7 +724,6 @@ fun ProviderDialogDropdown(
 
 
 @SuppressLint("SuspiciousIndentation")
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PaginationControls(
     currentPage: Int,
