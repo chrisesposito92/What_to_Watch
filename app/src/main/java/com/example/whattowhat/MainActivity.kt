@@ -40,6 +40,7 @@ import com.example.whattowhat.model.SortOption
 import com.example.whattowhat.model.SortOptions
 import com.example.whattowhat.model.Years
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.window.Dialog
@@ -180,9 +181,8 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
     val allProvidersOption = Provider(
         provider_id = 0,
         provider_name = "All Providers",
-        display_priority = 0,
-        logo_path = "",
-        display_priorities = emptyMap()
+        display_priority = -1,
+        logo_path = ""
     )
     Log.e("MovieViewModel", "SELECTED PROVIDERS: ${selectedProviders}")
     val providersResponse = movieViewModel.getMovieProviders("500f402322677a4df10fb559aa63f22b").observeAsState(initial = emptyList())
@@ -973,11 +973,6 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
 
     }
 
-    Log.e("MovieViewModel", "MOVIE ID: ${movieId}")
-    Log.e("MovieViewModel", "MOVIE DETAILS: ${movieDetails}")
-    Log.e("MovieViewModel", "MOVIE PROVIDERS: ${movieProviders}")
-    Log.e("MovieViewModel", "MOVIE RECOMMENDATIONS: ${movieRecommendations}")
-
     movieDetails?.let { movie ->
         Box {
             // Backdrop image
@@ -991,8 +986,8 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                 // Title
                 Text(
                     text = "${movie.title} (${movie.release_date.take(4)})",
-                    style = MaterialTheme.typography.displayMedium.copy(color = Color.White),
-                    modifier = Modifier.shadow(2.dp)
+                    style = MaterialTheme.typography.displaySmall.copy(color = Color.White),
+                    modifier = Modifier.shadow(2.dp).clickable{}
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Rating
@@ -1000,11 +995,13 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = "Rating",
-                        tint = Color.Yellow
+                        tint = Color.Yellow,
+                        modifier = Modifier
+                            .size(16.dp)
                     )
                     Text(
                         text = "${movie.vote_average} / 10",
-                        style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
+                        style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
                         modifier = Modifier
                             .padding(start = 4.dp)
                             .shadow(2.dp)
@@ -1058,20 +1055,16 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                 var movieRecommendationsFiltered = movieRecommendations?.filter { it.vote_count >= 250 }?.distinctBy { it.id }
                 movieRecommendationsFiltered?.let { recommendations ->
                     Text(
-                        text = "Similar Movies",
+                        text = "Recommendations",
                         style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
                         modifier = Modifier.padding(top = 0.dp, bottom = 8.dp)
                     )
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-               //         contentPadding = PaddingValues(horizontal = 16.dp)
                     ) {
                         items(recommendations.size) { index ->
                             var movie = recommendations[index]
-                        //    var nextMovie = recommendations.getOrNull(index + 1)
-                        //    if(movie.vote_count >= 250 && movie != nextMovie){
-                                RecommendationCard(movie, movieViewModel, navController)
-                        //    }
+                            RecommendationCard(movie, movieViewModel, navController)
                         }
                     }
                 }
@@ -1096,11 +1089,15 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
 
 @Composable
 fun RecommendationCard(movie: MovieItem, movieViewModel: MovieViewModel = viewModel(), navController: NavController) {
+    var color by remember { mutableStateOf(Color.White) }
     Box(
         modifier = Modifier
             .width(150.dp)
             .height(250.dp)
             .padding(4.dp)
+            .onFocusChanged { focusState ->
+                color = if (focusState.isFocused) Color.Magenta else Color.White
+            }
             .clickable {
                 //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
                 Log.e("MovieViewModel", "MOVIE ID: ${movie.id}")
@@ -1124,15 +1121,30 @@ fun RecommendationCard(movie: MovieItem, movieViewModel: MovieViewModel = viewMo
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(
-                text = "Rating: ${movie.vote_average}",
-                style = MaterialTheme.typography.labelMedium.copy(color = Color.White),
+            Row (
+                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier
-                //    .padding(4.dp)
-                    .align(Alignment.CenterHorizontally), // Center text horizontally
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+                    .fillMaxWidth()
+
+
+            ){
+                Icon(
+                    imageVector = Icons.Default.Star,
+                    contentDescription = "Rating",
+                    tint = Color.Yellow,
+                    modifier = Modifier
+                        .size(16.dp)
+                )
+                Text(
+                    text = "${movie.vote_average}",
+                    style = MaterialTheme.typography.labelMedium.copy(color = Color.White),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .align(Alignment.CenterVertically)
+                )
+            }
         }
      //   }
     }
@@ -1165,15 +1177,20 @@ fun RecommendationImage(backdropPath: String?) {
                 .fillMaxWidth()
                 .fillMaxHeight() // Adjust height accordingly
                 .clip(RoundedCornerShape(20)),
-            contentScale = ContentScale.Crop,
-            alpha = 0.9f
+            contentScale = ContentScale.Crop
         )
         // Dark gradient overlay if needed
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-
+                .clip(RoundedCornerShape(20))
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black),
+                        startY = 100f // Adjust gradient to your liking
+                    )
+                )
         )
     }
 }
@@ -1190,8 +1207,7 @@ fun BackdropImage(backdropPath: String?) {
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(), // Adjust height accordingly
-            contentScale = ContentScale.Crop,
-            alpha = 0.5f
+            contentScale = ContentScale.Crop
         )
         // Dark gradient overlay if needed
         Box(
@@ -1201,7 +1217,7 @@ fun BackdropImage(backdropPath: String?) {
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(Color.Transparent, Color.Black),
-                        startY = 300f // Adjust gradient to your liking
+                        startY = 400f // Adjust gradient to your liking
                     )
                 )
         )
