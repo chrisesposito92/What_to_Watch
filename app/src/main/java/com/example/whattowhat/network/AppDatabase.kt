@@ -1,12 +1,9 @@
 package com.example.whattowhat.network
 
-import com.example.whattowhat.network.WatchlistDao
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.whattowhat.model.WatchlistItem
 
 @Database(entities = [WatchlistItem::class], version = 2)

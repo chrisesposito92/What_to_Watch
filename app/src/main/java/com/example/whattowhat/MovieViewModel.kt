@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
 import com.example.whattowhat.model.MovieDetail
 import com.example.whattowhat.model.MovieItem
@@ -14,20 +13,6 @@ import kotlinx.coroutines.launch
 import com.example.whattowhat.model.TvItem
 
 class MovieViewModel : ViewModel() {
-    fun getMovieProviders(apiKey: String) = liveData(Dispatchers.IO) {
-        try {
-            val response = RetrofitClient.instance.getWatchProvidersMovies(apiKey);
-            if (response.isSuccessful) {
-                emit(response.body()?.results ?: emptyList())
-            } else {
-                Log.e("MovieViewModel", "Error fetching providers: ${response.errorBody()?.string()}")
-                emit(emptyList())
-            }
-        } catch (e: Exception) {
-            Log.e("MovieViewModel", "Exception fetching providers", e)
-            emit(emptyList())
-        }
-    }
 
     // LiveData to observe movies
     private val _moviesState = MutableLiveData<List<MovieItem>>()
@@ -36,7 +21,7 @@ class MovieViewModel : ViewModel() {
     private val _totalPagesMovie = MutableLiveData<Int>()
     val totalPagesMovie: LiveData<Int> = _totalPagesMovie
 
-    fun getMovies(pageSize: Int = 20, apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = 250, voteAverage: Int? = null) {
+    fun getMovies(apiKey: String, page: Int, sortBy: String, excludeAnimation: Boolean, providerId: String? = null, genreId: String? = null, year: Int? = null, voteCount: Int? = 250, voteAverage: Int? = null) {
         viewModelScope.launch {
             val withoutGenreId = if (excludeAnimation) "16" else null
             val apiPage1 = 2 * page -1
@@ -198,15 +183,14 @@ class MovieViewModel : ViewModel() {
     }
 
     open class Event<out T>(private val content: T) {
-        var hasBeenHandled = false
-            private set
+        private var hasBeenHandled = false
 
         fun getContentIfNotHandled(): T? {
-            if (hasBeenHandled) {
-                return null
+            return if (hasBeenHandled) {
+                null
             } else {
                 hasBeenHandled = true
-                return content
+                content
             }
         }
 
@@ -247,7 +231,7 @@ class MovieViewModel : ViewModel() {
                     val usProvidersFlat = response.body()?.results?.get("US")?.flatrate ?: emptyList()
                     val usProviders = (usProvidersBuy + usProvidersRent + usProvidersFlat).distinct().sortedBy { it.display_priority }
 
-                    _movieProviders.postValue(usProviders ?: emptyList())
+                    _movieProviders.postValue(usProviders)
                 } else {
                     Log.e("MovieViewModel", "Error fetching movie providers: ${response.errorBody()?.string()}")
                 }

@@ -2,17 +2,11 @@ package com.example.whattowhat
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
 import com.example.whattowhat.model.WatchlistItem
 import com.example.whattowhat.network.AppDatabase
-import com.example.whattowhat.network.DatabaseProvider
 import kotlinx.coroutines.launch
-import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import com.example.whattowhat.model.Genre
-import com.example.whattowhat.network.WatchlistDao
 
 class RoomViewModel(application: Application) : AndroidViewModel(application) {
 

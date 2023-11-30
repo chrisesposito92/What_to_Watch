@@ -7,7 +7,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstan
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.YouTubePlayerTracker
 
 class YouTubePlayerActivity : AppCompatActivity() {
 
@@ -63,18 +62,14 @@ class YouTubePlayerActivity : AppCompatActivity() {
 
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 if (event.action == KeyEvent.ACTION_DOWN) {
-                    youTubePlayer?.let { player ->
-                        player.seekTo(currentPlaybackPosition - 10) // Rewind by 10 seconds
-                    }
+                    youTubePlayer?.seekTo(currentPlaybackPosition - 10)
                 }
                 return true
             }
 
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
                 if (event.action == KeyEvent.ACTION_DOWN) {
-                    youTubePlayer?.let { player ->
-                        player.seekTo(currentPlaybackPosition + 10) // Fast forward by 10 seconds
-                    }
+                    youTubePlayer?.seekTo(currentPlaybackPosition + 10)
                 }
                 return true
             }

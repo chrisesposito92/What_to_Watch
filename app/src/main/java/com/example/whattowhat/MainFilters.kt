@@ -1,5 +1,6 @@
 package com.example.whattowhat
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,66 @@ import com.example.whattowhat.model.Genre
 import com.example.whattowhat.model.Provider
 import com.example.whattowhat.model.SortOption
 
+@Composable
+fun FilterRow(
+    genres: List<Genre>,
+    selectedGenreId: Int,
+    onGenreSelected: (Int) -> Unit,
+    years: List<String>,
+    selectedYear: String,
+    onYearSelected: (String) -> Unit,
+    providers: List<Provider>,
+    selectedProvider: Int,
+    onProviderSelected: (Int) -> Unit,
+    filtersVisible: Boolean,
+    ratings: List<Int>,
+    selectedRating: Int,
+    onRatingSelected: (Int) -> Unit,
+    sortOptions: List<SortOption>,
+    selectedSortId: String,
+    onSortSelected: (String) -> Unit,
+    excludeAnimation: Boolean,
+    onExcludeAnimationChanged: (Boolean) -> Unit,
+    isMoviesSelected: Boolean,
+    onIsMoviesSelectedChanged: (Boolean) -> Unit
+) {
+    if(filtersVisible){
+        SortDialogDropdown(
+            sortOptions = sortOptions,
+            selectedSortId = selectedSortId,
+            onSortSelected = onSortSelected
+        )
+        GenreDialogDropdown(
+            genres = genres,
+            selectedGenreId = selectedGenreId,
+            onGenreSelected = onGenreSelected
+        )
+        YearDialogDropdown(
+            years = years,
+            selectedYear = selectedYear,
+            onYearSelected = onYearSelected
+        )
+        MinRatingDialogDropdown(
+            ratings = ratings,
+            selectedRating = selectedRating,
+            onRatingSelected = onRatingSelected
+        )
+        Log.e("MovieViewModel", "PROVIDERS: $providers")
+        ProviderDialogDropdown(
+            providers = providers,
+            selectedProvider = selectedProvider,
+            onProviderSelected = onProviderSelected
+        )
+        IncludeAnimationDialogDropdown(
+            excludeAnimation = excludeAnimation,
+            onExcludeAnimationChanged = onExcludeAnimationChanged
+        )
+        MoviesOrTvDialogDropdown(
+            isMoviesSelected = isMoviesSelected,
+            onIsMoviesSelectedChanged = onIsMoviesSelectedChanged
+        )
+    }
+}
 @Composable
 fun IncludeAnimationDialogDropdown(
     excludeAnimation: Boolean,
