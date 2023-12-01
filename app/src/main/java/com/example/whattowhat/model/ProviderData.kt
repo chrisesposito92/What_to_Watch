@@ -2,7 +2,7 @@ package com.example.whattowhat.model
 
 object ProviderData {
     val providers = listOf(
-        Provider( -1, null, "All Providers", 0),
+        Provider( -1, null, "All Selected Providers", 0),
         Provider(0, "/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg", "Netflix", 8),
         Provider(1, "/emthp39XA2YScoYL1p0sdbAH2WA.jpg", "Amazon Prime Video", 9),
         Provider(2, "/7TVfqxyWGqaJZM715IPHTwtgcXo.jpg", "Max Amazon Channel", 1825),

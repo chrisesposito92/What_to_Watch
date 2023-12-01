@@ -14,6 +14,9 @@ interface WatchlistDao {
     @Query("SELECT * FROM watchlist_items")
     fun getWatchlist(): LiveData<List<WatchlistItem>>
 
+    @Query("SELECT * FROM watchlist_items WHERE movieId = :movieId")
+    fun getWatchlistItem(movieId: Int): WatchlistItem
+
     @Query("DELETE FROM watchlist_items WHERE movieId = :movieId")
     suspend fun removeFromWatchlist(movieId: Int)
 

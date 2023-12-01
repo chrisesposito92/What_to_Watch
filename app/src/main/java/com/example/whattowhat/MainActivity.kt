@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
                 }
                 composable("watchlist") { WatchlistScreen(roomViewModel, navController) }
                 // Add other composables for different routes as needed
+                composable("watched") { WatchedScreen(roomViewModel, navController) }
             }
         }
 

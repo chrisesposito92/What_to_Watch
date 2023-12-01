@@ -120,7 +120,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
 
     Column(
         modifier = Modifier
-            .padding(16.dp)
+            .padding(8.dp)
     ){
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -169,6 +169,12 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
             ){
                 Text("Watchlist")
             }
+            Button(
+                onClick = {navController.navigate("watched") }
+            ){
+                Text("Watched")
+            }
+
 
         }
 
@@ -186,7 +192,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
                     LazyVerticalGrid(
                         state = gridState,
                         //    columns = GridCells.Adaptive(minSize = 154.dp)
-                        columns = GridCells.Fixed(7)
+                        columns = GridCells.Fixed(8)
                     ) {
                         items(movies.size) { index ->
                             MovieItemView(movies[index], viewModel(), navController)

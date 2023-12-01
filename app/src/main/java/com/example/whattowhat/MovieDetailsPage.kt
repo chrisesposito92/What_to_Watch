@@ -28,6 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,16 +48,33 @@ import com.example.whattowhat.model.Provider
 @Composable
 fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navController: NavController, roomViewModel: RoomViewModel = viewModel()) {
     // Assuming movieDetails is a LiveData object that holds the details
-    val movieDetails by movieViewModel.movieDetails.observeAsState()
-    val movieProviders by movieViewModel.movieProviders.observeAsState()
-    val movieRecommendations by movieViewModel.movieRecommendations.observeAsState()
+    val movieDetails by movieViewModel.movieDetails.observeAsState(initial = null)
+    val movieProviders by movieViewModel.movieProviders.observeAsState(initial = null)
+    val movieRecommendations by movieViewModel.movieRecommendations.observeAsState(initial = null)
+    val isWatchlistItem by roomViewModel.isWatchlistItem.observeAsState(initial = false)
+    var recheckWatchlist by remember { mutableStateOf(false) }
+    val isWatchedItem by roomViewModel.isWatchedItem.observeAsState(initial = false)
+    var recheckWatched by remember { mutableStateOf(false) }
+    val selectedProviderIdList = RememberProviders().getSelectedProviders(LocalContext.current).map { it }
+    val selectedProviderIdString = selectedProviderIdList.joinToString(",")
+
+    Log.e("MovieDetailsPage", "Is In Watchlist: ${isWatchlistItem}")
+
     val context = LocalContext.current
 
     LaunchedEffect(movieId) {
         movieViewModel.fetchMovieDetails(movieId!!.toInt(), "500f402322677a4df10fb559aa63f22b")
         movieViewModel.fetchMovieWatchProviders(movieId.toInt(), "500f402322677a4df10fb559aa63f22b")
         movieViewModel.getMovieRecommendations(movieId.toInt(), "500f402322677a4df10fb559aa63f22b")
+        roomViewModel.isInWatchlist(movieId.toInt())
+    }
 
+    LaunchedEffect(recheckWatchlist) {
+        roomViewModel.isInWatchlist(movieId!!.toInt())
+    }
+
+    LaunchedEffect(recheckWatched) {
+        roomViewModel.isWatchedItem(movieId!!.toInt())
     }
 
     movieDetails?.let { movie ->
@@ -64,17 +84,36 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(8.dp)
                     .align(Alignment.BottomStart)
             ) {
                 // Title
-                Text(
-                    text = "${movie.title} (${movie.release_date.take(4)})",
-                    style = MaterialTheme.typography.displaySmall.copy(color = Color.White),
+                Row (
                     modifier = Modifier
-                        .shadow(2.dp)
-                        .clickable {}
-                )
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ){
+                    Text(
+                        text = "${movie.title} (${movie.release_date.take(4)})",
+                        style = MaterialTheme.typography.displaySmall.copy(color = Color.White),
+                        modifier = Modifier
+                            .shadow(2.dp)
+                            .clickable {}
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Button(
+                        onClick = {
+                            navController.navigate("movietvList/${selectedProviderIdString}"){
+                                popUpTo("providerSelection") { inclusive = true }
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    ) {
+                        Text("Home")
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 // Rating
                 Row {
@@ -143,28 +182,65 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                     }
 
                     val genreIds = movie.genres.joinToString(",") { it.id.toString() }
-
-                    Button(
-                        onClick = {
-                            roomViewModel.addToWatchlist(
-                                movie.id,
-                                movie.title,
-                                movie.poster_path,
-                                genreIds,
-                                movie.release_date,
-                                movie.vote_average
-                            )
+                    if(isWatchlistItem == null || isWatchlistItem == false){
+                        Button(
+                            onClick = {
+                                roomViewModel.addToWatchlist(
+                                    movie.id,
+                                    movie.title,
+                                    movie.poster_path,
+                                    genreIds,
+                                    movie.release_date,
+                                    movie.vote_average
+                                )
+                                Toast.makeText(context, "Added to watchlist", Toast.LENGTH_SHORT).show()
+                                recheckWatchlist = !recheckWatchlist
+                            }
+                        ) {
+                            Text("Add to Watchlist")
                         }
-                    ) {
-                        Text("Add to Watchlist")
+                    }else{
+                        Button(
+                            onClick = {
+                                roomViewModel.removeFromWatchlist(movie.id)
+                                Toast.makeText(context, "Removed from watchlist", Toast.LENGTH_SHORT).show()
+                                recheckWatchlist = !recheckWatchlist
+                            }
+                        ) {
+                            Text("Remove from Watchlist")
+                        }
                     }
 
-                    Button(
-                        onClick = {
-                            roomViewModel.removeFromWatchlist(movie.id)
+                    if(isWatchedItem == null || isWatchedItem == false) {
+                        Button(
+                            onClick = {
+                                roomViewModel.addToWatchedlist(
+                                    movie.id,
+                                    movie.title,
+                                    movie.poster_path,
+                                    genreIds,
+                                    movie.release_date,
+                                    movie.vote_average,
+                                    true
+                                )
+                                Toast.makeText(context, "Added to watched list", Toast.LENGTH_SHORT)
+                                    .show()
+                                recheckWatched = !recheckWatched
+                            }
+                        ) {
+                            Text("Mark as Watched")
                         }
-                    ) {
-                        Text("Remove from Watchlist")
+                    }else{
+                        Button(
+                            onClick = {
+                                roomViewModel.removeFromWatchedMovielist(movie.id)
+                                Toast.makeText(context, "Removed from watched list", Toast.LENGTH_SHORT)
+                                    .show()
+                                recheckWatched = !recheckWatched
+                            }
+                        ) {
+                            Text("Unmark as Watched")
+                        }
                     }
                 }
 

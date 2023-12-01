@@ -13,10 +13,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,24 +50,24 @@ fun WatchlistScreen(roomViewModel: RoomViewModel = viewModel(), navController: N
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
         Text("Watchlist", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
         LazyVerticalGrid(
             state = rememberLazyGridState(),
-            columns = GridCells.Fixed(7)
+            columns = GridCells.Fixed(8)
         ) {
             items(watchlist.size) { index ->
                 val watchlist = watchlist[index]
-                WatchlistItemView(watchlist, viewModel(), navController)
+                WatchlistItemView(watchlist, viewModel(), navController,roomViewModel)
             }
         }
     }
 }
 
 @Composable
-fun WatchlistItemView(watchlist: WatchlistItem, movieViewModel: MovieViewModel, navController: NavController) {
+fun WatchlistItemView(watchlist: WatchlistItem, movieViewModel: MovieViewModel, navController: NavController, roomViewModel: RoomViewModel ){
     val context = LocalContext.current
     val imageUrlBase = "https://image.tmdb.org/t/p/w780"
     val genres = watchlist.genre_ids.split(",").joinToString(", ") { genreId ->
@@ -81,8 +84,8 @@ fun WatchlistItemView(watchlist: WatchlistItem, movieViewModel: MovieViewModel, 
             .border(2.dp, color, shape = RoundedCornerShape(10))
             .clickable {
                 //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
-                Log.e("MovieViewModel", "MOVIE ID: ${watchlist.id}")
-                navController.navigate("movieDetail/${watchlist.id}")
+                Log.e("MovieViewModel", "MOVIE ID: ${watchlist.movieId}")
+                navController.navigate("movieDetail/${watchlist.movieId}")
             },
     ) {
         watchlist.poster_path.let { posterPath ->
@@ -122,7 +125,6 @@ fun WatchlistItemView(watchlist: WatchlistItem, movieViewModel: MovieViewModel, 
             ),
             modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
         )
-
     }
 
     // Observe the video ID LiveData.
