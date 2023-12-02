@@ -32,19 +32,18 @@ import androidx.navigation.NavController
 import com.example.whattowhat.model.MovieGenreData
 import com.example.whattowhat.model.ProviderData
 import com.example.whattowhat.model.SortOptions
-import com.example.whattowhat.model.TvGenreData
 import com.example.whattowhat.model.Years
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, roomViewModel: RoomViewModel){
+fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController){
 
     var isMoviesSelected by remember { mutableStateOf(true) }
-    var genres by remember { mutableStateOf(MovieGenreData.genres) }
+    val genres by remember { mutableStateOf(MovieGenreData.genres) }
     val years = Years.years
     val ratings = (1 .. 10).toList()
     val selectedProviderIds =  RememberProviders().getSelectedProviders(LocalContext.current).map { it.toInt() }
-    val providers = ProviderData.providers.filter { it.provider_id == 0 || it.provider_id in selectedProviderIds.orEmpty() }
+    val providers = ProviderData.providers.filter { it.provider_id == 0 || it.provider_id in selectedProviderIds }
     val rememberedRating = RememberFilters().getMinRating(LocalContext.current)
     var selectedRating by remember { mutableIntStateOf(rememberedRating) }
     val rememberedYear = RememberFilters().getSelectedYear(LocalContext.current)
@@ -99,7 +98,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
     ) {
         val genreId = selectedGenreId.toString()
 
-        val providerId = if(selectedProviderId == -1) selectedProviderIds?.joinToString("|") else selectedProviderId.toString()
+        val providerId = if(selectedProviderId == -1) selectedProviderIds.joinToString("|") else selectedProviderId.toString()
         Log.e("MovieViewModel", "PROVIDER ID: $providerId")
 
         Log.e("MovieViewModel", "GENRE ID: $genreId")
@@ -107,7 +106,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
             movieViewModel.getMovies(
                 apiKey = "500f402322677a4df10fb559aa63f22b",
                 genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                providerId = if(selectedProviderId == 0) selectedProviderIds?.joinToString("|") else selectedProviderId.toString(),
+                providerId = if(selectedProviderId == 0) selectedProviderIds.joinToString("|") else selectedProviderId.toString(),
                 year = if (selectedYear == "All Years") null else selectedYear.toInt(),
                 voteAverage = if (selectedRating == 0) null else selectedRating,
                 page = currentPage,
@@ -118,7 +117,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
             movieViewModel.getTV(
                 apiKey = "500f402322677a4df10fb559aa63f22b",
                 genreId = if(selectedGenreId == 0) null else selectedGenreId.toString(),
-                providerId = if(selectedProviderId == -1) selectedProviderIds?.joinToString("|") else selectedProviderId.toString(),
+                providerId = if(selectedProviderId == -1) selectedProviderIds.joinToString("|") else selectedProviderId.toString(),
                 year = if (selectedYear == "All Years") null else selectedYear.toInt(),
                 voteAverage = if (selectedRating == 0) null else selectedRating,
                 page = currentPage,

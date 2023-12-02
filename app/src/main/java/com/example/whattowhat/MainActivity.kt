@@ -151,8 +151,7 @@ class MainActivity : ComponentActivity() {
                                     {
                                         MovieTvListScreen(
                                             movieViewModel,
-                                            navController,
-                                            roomViewModel
+                                            navController
                                         )
                                     }
                                     //         composable("home") { MovieTvListScreen(viewModel(), navController) }
