@@ -26,7 +26,7 @@ class RememberFilters {
 
     fun getSelectedGenre(context: Context): Int {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        return sharedPreferences.getInt("SelectedGenre", 0) ?: 0
+        return sharedPreferences.getInt("SelectedGenre", 0)
     }
 
     fun saveSelectedYear(context: Context, selectedYear: String) {
@@ -52,7 +52,7 @@ class RememberFilters {
 
     fun getIncludeAnimation(context: Context): Boolean {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        return sharedPreferences.getBoolean("ExcludeAnimation", true) ?: true
+        return sharedPreferences.getBoolean("ExcludeAnimation", true)
     }
 
     fun saveMinRating(context: Context, minRating: Int) {
@@ -65,7 +65,7 @@ class RememberFilters {
 
     fun getMinRating(context: Context): Int {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        return sharedPreferences.getInt("MinRating", 1) ?: 1
+        return sharedPreferences.getInt("MinRating", 1)
     }
 
     fun saveSelectedProviderId(context: Context, selectedProvider: Int) {
@@ -78,7 +78,7 @@ class RememberFilters {
 
     fun getSelectedProvider(context: Context): Int {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        return sharedPreferences.getInt("SelectedProvider", 0) ?: 0
+        return sharedPreferences.getInt("SelectedProvider", 0)
     }
 
     fun saveCurrentPage(context: Context, currentPage: Int) {
@@ -91,6 +91,6 @@ class RememberFilters {
 
     fun getSavedCurrentPage(context: Context): Int {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
-        return sharedPreferences.getInt("CurrentPage", 1) ?: 1
+        return sharedPreferences.getInt("CurrentPage", 1)
     }
 }

@@ -1,3 +1,5 @@
+@file:Suppress("NAME_SHADOWING")
+
 package com.example.whattowhat
 
 import android.util.Log
@@ -8,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -94,7 +95,7 @@ fun IncludeAnimationDialogDropdown(
     onExcludeAnimationChanged: (Boolean) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val context = LocalContext.current
 
     val colorScheme = MaterialTheme.colorScheme
     var containerColor by remember { mutableStateOf(colorScheme.primary) }
@@ -274,7 +275,7 @@ fun YearDialogDropdown(
     onYearSelected: (String) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
-    var context = LocalContext.current
+    val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
     var containerColor by remember { mutableStateOf(colorScheme.primary) }
     var contentColor by remember { mutableStateOf(colorScheme.background) }
