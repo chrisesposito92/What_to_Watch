@@ -50,7 +50,7 @@ fun WatchlistScreen(roomViewModel: RoomViewModel = viewModel(), navController: N
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
+            .padding(start = 15.dp, top = 0.dp, end = 0.dp, bottom = 0.dp)
     ) {
         Text("Watchlist", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
@@ -76,7 +76,7 @@ fun WatchlistItemView(watchlist: WatchlistItem, movieViewModel: MovieViewModel, 
     var color by remember { mutableStateOf(Color.White) }
     Card(
         modifier = Modifier
-            .padding(5.dp)
+            .padding(0.dp)
             // Apply onFocusChanged modifier directly to Card
             .onFocusChanged { focusState ->
                 color = if (focusState.isFocused) Color.Magenta else Color.White

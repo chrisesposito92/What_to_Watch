@@ -1,6 +1,7 @@
 package com.example.whattowhat
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,8 +37,11 @@ import com.example.whattowhat.model.Provider
 import com.example.whattowhat.model.ProviderData
 
 
+
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProviderSelectionScreen(navController: NavController) {
+fun ProviderSelectionScreen(navController: NavController, drawerState: DrawerState) {
     val context = LocalContext.current
     val providers = ProviderData.providers
     val sortedProviders = providers.sortedBy { it.display_priority }.filter { it.provider_id != 0 }
@@ -43,8 +49,6 @@ fun ProviderSelectionScreen(navController: NavController) {
     val selectedProvidersOld = sortedProviders.filter { it.provider_id.toString() in selectedProviderIds }
     val selectedProviders = remember { mutableStateListOf(*selectedProvidersOld.toTypedArray()) }
     var selectAll by remember { mutableStateOf(false) }
-
-
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -58,7 +62,9 @@ fun ProviderSelectionScreen(navController: NavController) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Button(onClick = {
+            Button(
+                enabled = !drawerState.isOpen,
+                onClick = {
                 selectAll = !selectAll
                 if (selectAll) {
                     selectedProviders.clear()
@@ -72,9 +78,9 @@ fun ProviderSelectionScreen(navController: NavController) {
 
             Button(onClick = {
                 RememberProviders().saveSelectedProviders(context, selectedProviders.map { it.provider_id.toString() }.toSet())
-                navController.navigate("movietvList/${selectedProviders.joinToString(",") { it.provider_id.toString() }}")
+                Toast.makeText(context, "Providers Saved", Toast.LENGTH_SHORT).show()
             }) {
-                Text("Continue")
+                Text("Save")
             }
         }
 

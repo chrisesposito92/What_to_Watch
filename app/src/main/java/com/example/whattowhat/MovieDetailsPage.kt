@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -78,7 +79,11 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
     }
 
     movieDetails?.let { movie ->
-        Box {
+        Box (
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 11.dp, end = 0.dp)
+        ){
             // Backdrop image
             BackdropImage(movie.backdrop_path)
             Column(
@@ -102,17 +107,6 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                             .shadow(2.dp)
                             .clickable {}
                     )
-                    Spacer(Modifier.weight(1f))
-                    Button(
-                        onClick = {
-                            navController.navigate("movietvList/${selectedProviderIdString}"){
-                                popUpTo("providerSelection") { inclusive = true }
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.CenterVertically)
-                    ) {
-                        Text("Home")
-                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 // Rating

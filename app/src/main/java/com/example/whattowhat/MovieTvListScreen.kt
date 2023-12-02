@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -35,21 +36,22 @@ import com.example.whattowhat.model.Years
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, selectedProviderIds: List<Int>?, roomViewModel: RoomViewModel){
-
-    Log.e("MovieViewModel", "SELECTED PROVIDERS: $selectedProviderIds")
-    Log.e("MovieViewModel", "SELECTED PROVIDER IDS: $roomViewModel.selectedProviderIds")
+fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navController: NavController, roomViewModel: RoomViewModel){
 
     var isMoviesSelected by remember { mutableStateOf(true) }
     var genres by remember { mutableStateOf(MovieGenreData.genres) }
     val years = Years.years
     val ratings = (1 .. 10).toList()
+    val selectedProviderIds =  RememberProviders().getSelectedProviders(LocalContext.current).map { it.toInt() }
     val providers = ProviderData.providers.filter { it.provider_id == 0 || it.provider_id in selectedProviderIds.orEmpty() }
-    Log.e("MovieViewModel", "PROVIDERS: $providers")
-    var selectedRating by remember { mutableIntStateOf(ratings.first()) }
-    var selectedYear by remember { mutableStateOf(years.first()) }
-    var selectedGenreId by remember { mutableIntStateOf(genres.first().id) }
-    var selectedProviderId by remember { mutableIntStateOf(providers.first().provider_id) }
+    val rememberedRating = RememberFilters().getMinRating(LocalContext.current)
+    var selectedRating by remember { mutableIntStateOf(rememberedRating) }
+    val rememberedYear = RememberFilters().getSelectedYear(LocalContext.current)
+    var selectedYear by remember { mutableStateOf(rememberedYear) }
+    val rememberedGenre = RememberFilters().getSelectedGenre(LocalContext.current)
+    var selectedGenreId by remember { mutableIntStateOf(rememberedGenre) }
+    val rememberedProviderId = RememberFilters().getSelectedProvider(LocalContext.current)
+    var selectedProviderId by remember { mutableIntStateOf(rememberedProviderId) }
     val movies by movieViewModel.moviesState.observeAsState(initial = emptyList())
     val tv by movieViewModel.tvState.observeAsState(initial = emptyList())
     var currentPage by remember { mutableIntStateOf(1) }
@@ -57,12 +59,18 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
     val totalPagesTv by movieViewModel.totalPagesTv.observeAsState(1)
     var totalPages by remember { mutableIntStateOf(1) }
     val sorts = SortOptions.sortOptions
-    var selectedSortId by remember { mutableStateOf(sorts.first().id) }
-    var excludeAnimation by remember { mutableStateOf(false) }
-    val gridState = rememberLazyGridState() // LazyGridState for LazyVerticalGrid
+    val rememberedSort = RememberFilters().getSelectedSortOption(LocalContext.current)
+    var selectedSortId by remember { mutableStateOf(rememberedSort) }
+    val rememberedIncludeAnimation = RememberFilters().getIncludeAnimation(LocalContext.current)
+    var excludeAnimation by remember { mutableStateOf(rememberedIncludeAnimation) }
+    val gridState = rememberLazyGridState()
     var filtersVisible by remember { mutableStateOf(true) }
-//    val watchlist by roomViewModel.watchlist.observeAsState(initial = emptyList())
+    val context = LocalContext.current
 
+    Log.e("MovieViewModel", "REMEMBERED SORT: $rememberedSort")
+    Log.e("MovieViewModel", "REMEMBERED GENRE: $rememberedGenre")
+
+    /*
     LaunchedEffect(isMoviesSelected) {
         genres = if (isMoviesSelected) {
             MovieGenreData.genres
@@ -73,6 +81,8 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
         // Reset the selected genre when switching between Movies and TV
         selectedGenreId = genres.first().id
     }
+
+     */
 
 
     // Fetch movies when currentPage changes
@@ -159,29 +169,36 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
                 .fillMaxWidth()
         ){
             Button(
-                onClick = { filtersVisible = !filtersVisible },
-                modifier = Modifier.padding(start = 20.dp)
+                onClick = { filtersVisible = !filtersVisible }
+
             ) {
                 Text(if (filtersVisible) "Hide Filters" else "Show Filters")
             }
             Button(
-                onClick = {navController.navigate("watchlist") }
+                onClick = {
+                    RememberFilters().saveSelectedGenre(context, 0)
+                    selectedGenreId = 0
+                    RememberFilters().saveSelectedYear(context, "All Years")
+                    selectedYear = "All Years"
+                    RememberFilters().saveIncludeAnimation(context, false)
+                    excludeAnimation = false
+                    RememberFilters().saveMinRating(context, 1)
+                    selectedRating = 1
+                    RememberFilters().saveSelectedSortOption(context, "popularity.desc")
+                    selectedSortId = "popularity.desc"
+                    RememberFilters().saveSelectedProviderId(context, 0)
+                    selectedProviderId = 0
+                }
             ){
-                Text("Watchlist")
+                Text("Reset Filters")
             }
-            Button(
-                onClick = {navController.navigate("watched") }
-            ){
-                Text("Watched")
-            }
-
-
         }
 
         if (isMoviesSelected) {
             totalPages = totalPagesMovie
             Column (
                 modifier = Modifier
+                    .padding(start = 4.dp, top = 0.dp, end = 0.dp, bottom = 0.dp)
                     .fillMaxSize()
             ){
                 Box (

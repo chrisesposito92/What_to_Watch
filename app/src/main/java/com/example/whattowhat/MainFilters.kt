@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.whattowhat.model.Genre
@@ -74,10 +75,13 @@ fun FilterRow(
             excludeAnimation = excludeAnimation,
             onExcludeAnimationChanged = onExcludeAnimationChanged
         )
+        /*
         MoviesOrTvDialogDropdown(
             isMoviesSelected = isMoviesSelected,
             onIsMoviesSelectedChanged = onIsMoviesSelectedChanged
         )
+
+         */
     }
 }
 @Composable
@@ -86,6 +90,7 @@ fun IncludeAnimationDialogDropdown(
     onExcludeAnimationChanged: (Boolean) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var context = LocalContext.current
 
     OutlinedButton(onClick = { showDialog = true }) {
         Text(text = if (excludeAnimation) "Exclude Animation" else "Include Animation")
@@ -108,6 +113,7 @@ fun IncludeAnimationDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onExcludeAnimationChanged(excludeAnimation)
+                                    RememberFilters().saveIncludeAnimation(context, excludeAnimation)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -169,6 +175,7 @@ fun GenreDialogDropdown(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val selectedGenreName = genres.firstOrNull { it.id == selectedGenreId }?.name ?: "All Genres"
+    val context = LocalContext.current
 
     OutlinedButton(onClick = { showDialog = true }) {
         Text(text = selectedGenreName)
@@ -193,6 +200,7 @@ fun GenreDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onGenreSelected(genre.id)
+                                    RememberFilters().saveSelectedGenre(context, genre.id)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -211,6 +219,7 @@ fun YearDialogDropdown(
     onYearSelected: (String) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var context = LocalContext.current
 
     OutlinedButton(onClick = { showDialog = true }) {
         Text(text = selectedYear)
@@ -232,6 +241,7 @@ fun YearDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onYearSelected(year)
+                                    RememberFilters().saveSelectedYear(context, year)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -251,6 +261,7 @@ fun SortDialogDropdown(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val selectedSortName = sortOptions.first { it.id == selectedSortId }.name
+    val context = LocalContext.current
 
 
     OutlinedButton(onClick = { showDialog = true }) {
@@ -273,6 +284,7 @@ fun SortDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onSortSelected(sort.id)
+                                    RememberFilters().saveSelectedSortOption(context, sort.id)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -291,6 +303,7 @@ fun MinRatingDialogDropdown(
     onRatingSelected: (Int) -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     OutlinedButton(onClick = { showDialog = true }) {
         Text(text = selectedRating.toString())
@@ -312,6 +325,7 @@ fun MinRatingDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onRatingSelected(rating)
+                                    RememberFilters().saveMinRating(context, rating)
                                     showDialog = false
                                 }
                                 .padding(16.dp)
@@ -331,7 +345,7 @@ fun ProviderDialogDropdown(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val selectedProviderName = providers.firstOrNull { it.provider_id == selectedProvider }?.provider_name ?: "All Providers"
-
+    val context = LocalContext.current
 
     OutlinedButton(onClick = { showDialog = true }) {
         Text(text = selectedProviderName)
@@ -353,6 +367,7 @@ fun ProviderDialogDropdown(
                                 .fillMaxWidth()
                                 .clickable {
                                     onProviderSelected(provider.provider_id)
+                                    RememberFilters().saveSelectedProviderId(context, provider.provider_id)
                                     showDialog = false
                                 }
                                 .padding(16.dp)

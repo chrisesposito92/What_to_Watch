@@ -1,6 +1,7 @@
 package com.example.whattowhat
 
 import android.util.Log
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -33,15 +35,18 @@ import com.example.whattowhat.model.MovieItem
 
 @Composable
 fun RecommendationCard(movie: MovieItem, movieViewModel: MovieViewModel = viewModel(), navController: NavController) {
-    var color by remember { mutableStateOf(Color.White) }
+    val colorScheme = MaterialTheme.colorScheme
+    var color by remember { mutableStateOf(colorScheme.background) }
     Box(
+
         modifier = Modifier
             .width(150.dp)
             .height(250.dp)
             .padding(4.dp)
             .onFocusChanged { focusState ->
-                color = if (focusState.isFocused) Color.Magenta else Color.White
+                color = if (focusState.isFocused) colorScheme.primary else colorScheme.background
             }
+            .border(2.dp, color, RoundedCornerShape(20.dp))
             .clickable {
                 //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
                 Log.e("MovieViewModel", "MOVIE ID: ${movie.id}")

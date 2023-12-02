@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,7 +52,7 @@ fun WatchedScreen(roomViewModel: RoomViewModel = viewModel(), navController: Nav
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp)
+            .padding(start = 15.dp, top = 0.dp, end = 0.dp, bottom = 0.dp)
     ) {
         Text("Watched", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
@@ -74,15 +75,15 @@ fun WatchedItemView(watchedItem: WatchedItem, movieViewModel: MovieViewModel, na
     val genres = watchedItem.genre_ids.split(",").joinToString(", ") { genreId ->
         MovieGenreData.genres.first { it.id == genreId.toInt() }.name
     }
+    var colorScheme = MaterialTheme.colorScheme
     var color by remember { mutableStateOf(Color.White) }
     Card(
         modifier = Modifier
-            .padding(5.dp)
-            // Apply onFocusChanged modifier directly to Card
+            .padding(0.dp)
             .onFocusChanged { focusState ->
-                color = if (focusState.isFocused) Color.Magenta else Color.White
+                color = if (focusState.isFocused) colorScheme.primary else colorScheme.background
             }
-            .border(2.dp, color, shape = RoundedCornerShape(10))
+            .border(2.dp, color, shape = RoundedCornerShape(5))
             .clickable {
                 //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
                 Log.e("MovieViewModel", "MOVIE ID: ${watchedItem.movieId}")

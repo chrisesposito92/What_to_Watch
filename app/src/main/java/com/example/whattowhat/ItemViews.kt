@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,20 +49,19 @@ fun MovieItemView(movie: MovieItem, movieViewModel: MovieViewModel, navControlle
     val genres = movie.genre_ids.joinToString(", ") { genreId ->
         MovieGenreData.genres.first { it.id == genreId }.name
     }
-    var color by remember { mutableStateOf(Color.White) }
+    val colorScheme = MaterialTheme.colorScheme
+    var color by remember { mutableStateOf(colorScheme.background) }
     Card(
+        shape = RoundedCornerShape(5),
         modifier = Modifier
             .padding(0.dp)
-            // Apply onFocusChanged modifier directly to Card
             .onFocusChanged { focusState ->
-                color = if (focusState.isFocused) Color.Magenta else Color.White
+                color = if (focusState.isFocused) colorScheme.primary else colorScheme.background
             }
-            .border(2.dp, color, shape = RoundedCornerShape(10))
+            .border(2.dp, color, shape = RoundedCornerShape(5))
             .clickable {
-                //    movieViewModel.fetchTrailerMovie(movie.id, "500f402322677a4df10fb559aa63f22b")
-                Log.e("MovieViewModel", "MOVIE ID: ${movie.id}")
                 navController.navigate("movieDetail/${movie.id}")
-            },
+            }
     ) {
         movie.poster_path?.let { posterPath ->
             val imageUrl = "$imageUrlBase$posterPath"
@@ -106,8 +107,8 @@ fun MovieItemView(movie: MovieItem, movieViewModel: MovieViewModel, navControlle
         Text(
             text = genres.substring(0, genres.length),
             style = TextStyle(
-                fontSize = 10.sp, // Set the font size to 12 sp for example
-                color = Color.Black // Optional: if you want to change the color
+                fontSize = 10.sp,
+                color = Color.Black
             ),
             modifier = Modifier.padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
         )
