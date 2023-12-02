@@ -26,7 +26,7 @@ class MovieViewModel : ViewModel() {
             val withoutGenreId = if (excludeAnimation) "16" else null
             val apiPage1 = 2 * page -1
             val apiPage2 = 2 * page
-            val response1 = RetrofitClient.instance.discoverMovies(
+            val response1 = RetrofitClient.tmdbInstance.discoverMovies(
                 apiKey = apiKey,
                 providerId = providerId,
                 genreId = genreId,
@@ -41,7 +41,7 @@ class MovieViewModel : ViewModel() {
             if(response1.isSuccessful && response1.body()!!.results.size <= 20){
 
 
-                val response2 = RetrofitClient.instance.discoverMovies(
+                val response2 = RetrofitClient.tmdbInstance.discoverMovies(
                     apiKey = apiKey,
                     providerId = providerId,
                     genreId = genreId,
@@ -81,7 +81,7 @@ class MovieViewModel : ViewModel() {
             val withoutGenreId = if (excludeAnimation) "16" else null
             val apiPage1 = 2 * page -1
             val apiPage2 = 2 * page
-            val response1 = RetrofitClient.instance.discoverTV(
+            val response1 = RetrofitClient.tmdbInstance.discoverTV(
                 apiKey = apiKey,
                 providerId = providerId,
                 genreId = genreId,
@@ -96,7 +96,7 @@ class MovieViewModel : ViewModel() {
             if(response1.isSuccessful && response1.body()!!.results.size <= 20){
 
 
-                val response2 = RetrofitClient.instance.discoverTV(
+                val response2 = RetrofitClient.tmdbInstance.discoverTV(
                     apiKey = apiKey,
                     providerId = providerId,
                     genreId = genreId,
@@ -130,7 +130,7 @@ class MovieViewModel : ViewModel() {
     fun fetchTrailerMovie(movieId: Int, apiKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.instance.getMovieVideos(movieId, apiKey)
+                val response = RetrofitClient.tmdbInstance.getMovieVideos(movieId, apiKey)
                 if (response.isSuccessful) {
                     // Filter for YouTube trailers
                     val trailers = response.body()?.results?.filter { it.isYoutubeTrailer() }
@@ -159,7 +159,7 @@ class MovieViewModel : ViewModel() {
     fun fetchTrailerTv(tvId: Int, apiKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.instance.getTvVideos(tvId, apiKey)
+                val response = RetrofitClient.tmdbInstance.getTvVideos(tvId, apiKey)
                 if (response.isSuccessful) {
                     // Filter for YouTube trailers
                     val trailers = response.body()?.results?.filter { it.isYoutubeTrailer() }
@@ -203,7 +203,7 @@ class MovieViewModel : ViewModel() {
     fun fetchMovieDetails(movieId: Int, apiKey: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.instance.getMovieDetails(movieId, apiKey)
+                val response = RetrofitClient.tmdbInstance.getMovieDetails(movieId, apiKey)
                 if (response.isSuccessful) {
                     _movieDetails.postValue(response.body())
                 } else {
@@ -221,7 +221,7 @@ class MovieViewModel : ViewModel() {
     fun fetchMovieWatchProviders(movieId: Int, apiKey: String){
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val response = RetrofitClient.instance.getMovieWatchProviders(movieId, apiKey)
+                val response = RetrofitClient.tmdbInstance.getMovieWatchProviders(movieId, apiKey)
 
                 Log.d("MovieViewModel", "fetchMovieWatchProviders: $response")
                 Log.d("MovieViewModel", "fetchMovieWatchProviders: ${response.body()}")
@@ -247,7 +247,7 @@ class MovieViewModel : ViewModel() {
 
     fun getMovieRecommendations(movieId: Int, apiKey: String) {
         viewModelScope.launch {
-            val response1 = RetrofitClient.instance.getMovieRecommendations(
+            val response1 = RetrofitClient.tmdbInstance.getMovieRecommendations(
                 movieId = movieId,
                 apiKey = apiKey,
                 page = 1
@@ -255,7 +255,7 @@ class MovieViewModel : ViewModel() {
 
             if(response1.isSuccessful){
 
-                val response2 = RetrofitClient.instance.getMovieRecommendations(
+                val response2 = RetrofitClient.tmdbInstance.getMovieRecommendations(
                     movieId = movieId,
                     apiKey = apiKey,
                     page = 2

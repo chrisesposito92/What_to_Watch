@@ -193,3 +193,4 @@ fun TvItemView(tv: TvItem, movieViewModel: MovieViewModel, navController: NavCon
         }
     }
 }
+

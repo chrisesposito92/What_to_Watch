@@ -47,6 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.whattowhat.model.Provider
+import com.example.whattowhat.model.Rating
 
 @Composable
 fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navController: NavController, roomViewModel: RoomViewModel = viewModel()) {
@@ -65,6 +66,7 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
     var watchlistContentColor by remember { mutableStateOf(colorScheme.background) }
     var watchedContainerColor by remember { mutableStateOf(colorScheme.primary) }
     var watchedContentColor by remember { mutableStateOf(colorScheme.background) }
+    var imdbRating by remember { mutableStateOf("0.0") }
 
     Log.e("MovieDetailsPage", "Is In Watchlist: $isWatchlistItem")
 
@@ -75,6 +77,14 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
         movieViewModel.fetchMovieWatchProviders(movieId.toInt(), "500f402322677a4df10fb559aa63f22b")
         movieViewModel.getMovieRecommendations(movieId.toInt(), "500f402322677a4df10fb559aa63f22b")
         roomViewModel.isInWatchlist(movieId.toInt())
+
+    }
+
+    LaunchedEffect(movieDetails?.imdb_id) {
+        movieDetails?.let {
+            imdbRating = fetchMovieRating(it.imdb_id ?: "")
+            Log.e("MovieDetailsPage", "IMDB Rating: $imdbRating")
+        }
     }
 
     LaunchedEffect(recheckWatchlist) {
@@ -114,6 +124,14 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                             .shadow(2.dp)
                     )
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "IMDB Rating: ${imdbRating}",
+                    style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .shadow(2.dp)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Rating
                 Row {
@@ -392,5 +410,17 @@ fun BackdropImage(backdropPath: String?) {
                     )
                 )
         )
+    }
+}
+
+suspend fun fetchMovieRating(imdbId: String): String {
+    val response = RetrofitClient.omdbInstance.getMovieRatingFromOMDb(imdbId)
+    return if (response.isSuccessful) {
+        // Successfully fetched the rating
+        response.body()?.imdbRating ?: "Rating not available"
+    } else {
+        // Handle error scenario
+        println("Error fetching rating: ${response.errorBody()}")
+        "Error fetching rating"
     }
 }

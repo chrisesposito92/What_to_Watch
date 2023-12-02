@@ -7,6 +7,7 @@ import com.example.whattowhat.model.TvDiscoverResponse
 import com.example.whattowhat.model.ProviderResponse
 import com.example.whattowhat.model.MovieVideosResponse
 import com.example.whattowhat.model.MovieResponse
+import com.example.whattowhat.model.OMDbMovieResponse
 import com.example.whattowhat.model.TvVideosResponse
 import retrofit2.Response
 import retrofit2.http.Path
@@ -89,4 +90,5 @@ interface TMDBApiService {
         @Query("language") language: String = "en-US",
         @Query("page") page: Int = 1
     ): Response<MovieDiscoverResponse>
+
 }
