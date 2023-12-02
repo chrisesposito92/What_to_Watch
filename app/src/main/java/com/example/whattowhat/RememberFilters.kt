@@ -80,4 +80,17 @@ class RememberFilters {
         val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
         return sharedPreferences.getInt("SelectedProvider", 0) ?: 0
     }
+
+    fun saveCurrentPage(context: Context, currentPage: Int) {
+        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putInt("CurrentPage", currentPage)
+            apply()
+        }
+    }
+
+    fun getSavedCurrentPage(context: Context): Int {
+        val sharedPreferences = context.getSharedPreferences("AppPreferences", Context.MODE_PRIVATE)
+        return sharedPreferences.getInt("CurrentPage", 1) ?: 1
+    }
 }

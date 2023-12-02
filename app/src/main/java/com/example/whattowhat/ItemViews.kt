@@ -51,14 +51,14 @@ fun MovieItemView(movie: MovieItem, movieViewModel: MovieViewModel, navControlle
     }
     val colorScheme = MaterialTheme.colorScheme
     var color by remember { mutableStateOf(colorScheme.background) }
-    var borderSize by remember { mutableStateOf(1.dp) }
+    var borderSize by remember { mutableStateOf(0.dp) }
     Card(
         shape = RoundedCornerShape(5),
         modifier = Modifier
             .padding(0.dp)
             .onFocusChanged { focusState ->
-                color = if (focusState.isFocused) colorScheme.primary else colorScheme.background
-                borderSize = if (focusState.isFocused) 3.dp else 1.dp
+                color = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.background
+                borderSize = if (focusState.isFocused) 3.dp else 0.dp
             }
             .border(borderSize, color, shape = RoundedCornerShape(5))
             .clickable {

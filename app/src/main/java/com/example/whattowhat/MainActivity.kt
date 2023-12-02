@@ -45,6 +45,9 @@ import com.example.whattowhat.model.NavigationOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -86,6 +89,9 @@ class MainActivity : ComponentActivity() {
 
             val items = NavigationOptions.options
             val selectedItem = remember { mutableStateOf<NavigationOption?>(null) }
+            val colorScheme = MaterialTheme.colorScheme
+            var containerColor by remember { mutableStateOf(colorScheme.primary) }
+            var contentColor by remember { mutableStateOf(colorScheme.background) }
             ModalNavigationDrawer(
                 drawerState = drawerState,
                 drawerContent = {
@@ -113,9 +119,16 @@ class MainActivity : ComponentActivity() {
                         ) {
                             TextButton(
                                 onClick = { scope.launch { drawerState.open() } },
+                                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                    contentColor = contentColor,
+                                    containerColor = containerColor
+                                ),
                                 enabled = !drawerState.isOpen,
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .onFocusChanged { focusState ->
+                                        containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                        contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                                     .background(color = MaterialTheme.colorScheme.primary)
                             ) {
                                 Column {

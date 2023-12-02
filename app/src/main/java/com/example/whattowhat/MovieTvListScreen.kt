@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +36,7 @@ import com.example.whattowhat.model.MovieGenreData
 import com.example.whattowhat.model.ProviderData
 import com.example.whattowhat.model.SortOptions
 import com.example.whattowhat.model.Years
+
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
@@ -54,7 +58,8 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
     var selectedProviderId by remember { mutableIntStateOf(rememberedProviderId) }
     val movies by movieViewModel.moviesState.observeAsState(initial = emptyList())
     val tv by movieViewModel.tvState.observeAsState(initial = emptyList())
-    var currentPage by remember { mutableIntStateOf(1) }
+    val rememberedPage = RememberFilters().getSavedCurrentPage(LocalContext.current)
+    var currentPage by remember { mutableIntStateOf(rememberedPage) }
     val totalPagesMovie by movieViewModel.totalPagesMovie.observeAsState(1)
     val totalPagesTv by movieViewModel.totalPagesTv.observeAsState(1)
     var totalPages by remember { mutableIntStateOf(1) }
@@ -127,6 +132,10 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
         }
     }
 
+    LaunchedEffect(currentPage){
+        RememberFilters().saveCurrentPage(context, currentPage)
+    }
+
 
     Column(
         modifier = Modifier
@@ -168,12 +177,29 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
             modifier = Modifier
                 .fillMaxWidth()
         ){
+            val colorScheme = MaterialTheme.colorScheme
+
+            var containerColorShow by remember { mutableStateOf(colorScheme.primary) }
+            var contentColorShow by remember { mutableStateOf(colorScheme.background) }
+            var containerColorReset by remember { mutableStateOf(colorScheme.primary) }
+            var contentColorReset by remember { mutableStateOf(colorScheme.background) }
+
+
             Button(
-                onClick = { filtersVisible = !filtersVisible }
+                onClick = { filtersVisible = !filtersVisible },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = containerColorShow,
+                    contentColor = contentColorShow
+                ),
+                modifier = Modifier
+                    .onFocusChanged { focusState ->
+                        containerColorShow = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                        contentColorShow = if (focusState.isFocused) colorScheme.background else colorScheme.background }
 
             ) {
                 Text(if (filtersVisible) "Hide Filters" else "Show Filters")
             }
+
             Button(
                 onClick = {
                     RememberFilters().saveSelectedGenre(context, 0)
@@ -188,11 +214,22 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
                     selectedSortId = "popularity.desc"
                     RememberFilters().saveSelectedProviderId(context, 0)
                     selectedProviderId = 0
+                    RememberFilters().saveCurrentPage(context, 1)
+                    currentPage = 1
                     Toast.makeText(context, "Filters Reset", Toast.LENGTH_SHORT).show()
-                }
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = containerColorReset,
+                    contentColor = contentColorReset
+                ),
+                modifier = Modifier
+                    .onFocusChanged { focusState ->
+                        containerColorReset = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                        contentColorReset = if (focusState.isFocused) colorScheme.background else colorScheme.background }
             ){
                 Text("Reset Filters")
             }
+
         }
 
         if (isMoviesSelected) {

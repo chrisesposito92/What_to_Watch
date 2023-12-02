@@ -5,6 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -14,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -92,7 +96,24 @@ fun IncludeAnimationDialogDropdown(
     var showDialog by remember { mutableStateOf(false) }
     var context = LocalContext.current
 
-    OutlinedButton(onClick = { showDialog = true }) {
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
+
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = if (excludeAnimation) "Exclude Animation" else "Include Animation")
     }
 
@@ -133,8 +154,25 @@ fun MoviesOrTvDialogDropdown(
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
-    OutlinedButton(onClick = { showDialog = true }) {
-        Text(text = if (isMoviesSelected) "Movies" else "TV")
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
+
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
+        Text(text = if (isMoviesSelected) "Movies" else "TV Shows")
     }
 
     if (showDialog) {
@@ -177,7 +215,24 @@ fun GenreDialogDropdown(
     val selectedGenreName = genres.firstOrNull { it.id == selectedGenreId }?.name ?: "All Genres"
     val context = LocalContext.current
 
-    OutlinedButton(onClick = { showDialog = true }) {
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
+
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = selectedGenreName)
     }
 
@@ -220,8 +275,24 @@ fun YearDialogDropdown(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
 
-    OutlinedButton(onClick = { showDialog = true }) {
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = selectedYear)
     }
 
@@ -262,9 +333,24 @@ fun SortDialogDropdown(
     var showDialog by remember { mutableStateOf(false) }
     val selectedSortName = sortOptions.first { it.id == selectedSortId }.name
     val context = LocalContext.current
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
 
 
-    OutlinedButton(onClick = { showDialog = true }) {
+    Button(
+        onClick = {
+            showDialog = true
+                  },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = selectedSortName)
     }
 
@@ -305,7 +391,24 @@ fun MinRatingDialogDropdown(
     var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    OutlinedButton(onClick = { showDialog = true }) {
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
+
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = selectedRating.toString())
     }
 
@@ -347,7 +450,24 @@ fun ProviderDialogDropdown(
     val selectedProviderName = providers.firstOrNull { it.provider_id == selectedProvider }?.provider_name ?: "All Providers"
     val context = LocalContext.current
 
-    OutlinedButton(onClick = { showDialog = true }) {
+    val colorScheme = MaterialTheme.colorScheme
+    var containerColor by remember { mutableStateOf(colorScheme.primary) }
+    var contentColor by remember { mutableStateOf(colorScheme.background) }
+
+
+    Button(
+        onClick = {
+            showDialog = true
+        },
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = Modifier
+            .onFocusChanged { focusState ->
+                containerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                contentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
+    ) {
         Text(text = selectedProviderName)
     }
 
