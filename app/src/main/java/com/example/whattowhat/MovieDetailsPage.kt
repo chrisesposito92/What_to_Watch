@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -36,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -56,6 +58,13 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
     var recheckWatchlist by remember { mutableStateOf(false) }
     val isWatchedItem by roomViewModel.isWatchedItem.observeAsState(initial = false)
     var recheckWatched by remember { mutableStateOf(false) }
+    val colorScheme = MaterialTheme.colorScheme
+    var trailerContainerColor by remember { mutableStateOf(colorScheme.primary) }
+    var trailerContentColor by remember { mutableStateOf(colorScheme.background) }
+    var watchlistContainerColor by remember { mutableStateOf(colorScheme.primary) }
+    var watchlistContentColor by remember { mutableStateOf(colorScheme.background) }
+    var watchedContainerColor by remember { mutableStateOf(colorScheme.primary) }
+    var watchedContentColor by remember { mutableStateOf(colorScheme.background) }
 
     Log.e("MovieDetailsPage", "Is In Watchlist: $isWatchlistItem")
 
@@ -103,7 +112,6 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                         style = MaterialTheme.typography.displaySmall.copy(color = Color.White),
                         modifier = Modifier
                             .shadow(2.dp)
-                            .clickable {}
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -163,12 +171,20 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                         .padding(bottom = 16.dp)
                 ){
                     Button(
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = trailerContainerColor,
+                            contentColor = trailerContentColor
+                        ),
                         onClick = {
                             movieViewModel.fetchTrailerMovie(
                                 movie.id,
                                 "500f402322677a4df10fb559aa63f22b"
                             )
-                        }
+                        },
+                        modifier = Modifier
+                            .onFocusChanged { focusState ->
+                                trailerContainerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                trailerContentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                     ) {
                         Text("Play Trailer")
                     }
@@ -176,6 +192,10 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                     val genreIds = movie.genres.joinToString(",") { it.id.toString() }
                     if(!isWatchlistItem){
                         Button(
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = watchlistContainerColor,
+                                contentColor = watchlistContentColor
+                            ),
                             onClick = {
                                 roomViewModel.addToWatchlist(
                                     movie.id,
@@ -187,17 +207,29 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                                 )
                                 Toast.makeText(context, "Added to watchlist", Toast.LENGTH_SHORT).show()
                                 recheckWatchlist = !recheckWatchlist
-                            }
+                            },
+                            modifier = Modifier
+                                .onFocusChanged { focusState ->
+                                    watchlistContainerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                    watchlistContentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                         ) {
                             Text("Add to Watchlist")
                         }
                     }else{
                         Button(
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = watchlistContainerColor,
+                                contentColor = watchlistContentColor
+                            ),
                             onClick = {
                                 roomViewModel.removeFromWatchlist(movie.id)
                                 Toast.makeText(context, "Removed from watchlist", Toast.LENGTH_SHORT).show()
                                 recheckWatchlist = !recheckWatchlist
-                            }
+                            },
+                            modifier = Modifier
+                                .onFocusChanged { focusState ->
+                                    watchlistContainerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                    watchlistContentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                         ) {
                             Text("Remove from Watchlist")
                         }
@@ -205,6 +237,10 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
 
                     if(!isWatchedItem) {
                         Button(
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = watchedContainerColor,
+                                contentColor = watchedContentColor
+                            ),
                             onClick = {
                                 roomViewModel.addToWatchedlist(
                                     movie.id,
@@ -218,18 +254,30 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                                 Toast.makeText(context, "Added to watched list", Toast.LENGTH_SHORT)
                                     .show()
                                 recheckWatched = !recheckWatched
-                            }
+                            },
+                            modifier = Modifier
+                                .onFocusChanged { focusState ->
+                                    watchedContainerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                    watchedContentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                         ) {
                             Text("Mark as Watched")
                         }
                     }else{
                         Button(
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = watchedContainerColor,
+                                contentColor = watchedContentColor
+                            ),
                             onClick = {
                                 roomViewModel.removeFromWatchedMovielist(movie.id)
                                 Toast.makeText(context, "Removed from watched list", Toast.LENGTH_SHORT)
                                     .show()
                                 recheckWatched = !recheckWatched
-                            }
+                            },
+                            modifier = Modifier
+                                .onFocusChanged { focusState ->
+                                    watchedContainerColor = if (focusState.isFocused) colorScheme.onPrimaryContainer else colorScheme.primary
+                                    watchedContentColor = if (focusState.isFocused) colorScheme.background else colorScheme.background }
                         ) {
                             Text("Unmark as Watched")
                         }
