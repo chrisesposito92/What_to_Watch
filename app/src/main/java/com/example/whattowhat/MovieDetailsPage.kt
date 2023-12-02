@@ -113,7 +113,7 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                 Row (
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                        .padding(horizontal = 0.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ){
@@ -124,47 +124,42 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                             .shadow(2.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "IMDB Rating: ${imdbRating}",
-                    style = MaterialTheme.typography.headlineSmall.copy(color = Color.White),
+                    style = MaterialTheme.typography.titleSmall.copy(color = Color.White),
                     modifier = Modifier
                         .padding(start = 4.dp)
                         .shadow(2.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 // Rating
-                Row {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Rating",
-                        tint = Color.Yellow,
-                        modifier = Modifier
-                            .size(16.dp)
-                    )
-                    Text(
-                        text = "${movie.vote_average} / 10",
-                        style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
-                        modifier = Modifier
-                            .padding(start = 4.dp)
-                            .shadow(2.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "TMDB Rating: ${movie.vote_average}",
+                    style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
                 // Runtime
                 Text(
                     text = movie.runtime.toString() + " minutes",
                     style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
-                    modifier = Modifier.shadow(2.dp)
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .shadow(2.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 // Genres
                 Text(
                     text = movie.genres.joinToString(", ") { it.name },
                     style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
-                    modifier = Modifier.shadow(2.dp)
+                    modifier = Modifier
+                        .padding(start = 4.dp)
+                        .shadow(2.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 // Providers
                 movieProviders?.let { providers ->
                     LazyRow {
@@ -173,14 +168,14 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 // Overview
                 Text(
                     text = movie.overview,
                     style = MaterialTheme.typography.bodySmall.copy(color = Color.White),
                     modifier = Modifier.shadow(2.dp)
                 )
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 // Play Trailer button
                 Row (
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -303,7 +298,7 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                 }
 
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 // Movie Recommendations Section
 
                 val movieRecommendationsFiltered = movieRecommendations?.filter { it.vote_count >= 250 }?.distinctBy { it.id }
@@ -311,10 +306,10 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                     Text(
                         text = "Recommendations",
                         style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                        modifier = Modifier.padding(top = 0.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 0.dp, bottom = 4.dp)
                     )
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         items(recommendations.size) { index ->
                             val movieItem = recommendations[index]
