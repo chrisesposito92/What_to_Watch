@@ -128,9 +128,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-                        if (drawerState.isOpen){
-
-                        }else{
+                        if (drawerState.isClosed){
                             Log.d("MainActivity", "drawerState is closed")
                             Column(
                                 modifier = Modifier
