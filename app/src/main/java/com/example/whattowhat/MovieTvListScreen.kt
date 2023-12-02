@@ -2,6 +2,7 @@ package com.example.whattowhat
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -188,6 +189,7 @@ fun MovieTvListScreen(movieViewModel: MovieViewModel = viewModel(), navControlle
                     selectedSortId = "popularity.desc"
                     RememberFilters().saveSelectedProviderId(context, 0)
                     selectedProviderId = 0
+                    Toast.makeText(context, "Filters Reset", Toast.LENGTH_SHORT).show()
                 }
             ){
                 Text("Reset Filters")
