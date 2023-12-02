@@ -56,10 +56,8 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
     var recheckWatchlist by remember { mutableStateOf(false) }
     val isWatchedItem by roomViewModel.isWatchedItem.observeAsState(initial = false)
     var recheckWatched by remember { mutableStateOf(false) }
-    val selectedProviderIdList = RememberProviders().getSelectedProviders(LocalContext.current).map { it }
-    val selectedProviderIdString = selectedProviderIdList.joinToString(",")
 
-    Log.e("MovieDetailsPage", "Is In Watchlist: ${isWatchlistItem}")
+    Log.e("MovieDetailsPage", "Is In Watchlist: $isWatchlistItem")
 
     val context = LocalContext.current
 
@@ -176,7 +174,7 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                     }
 
                     val genreIds = movie.genres.joinToString(",") { it.id.toString() }
-                    if(isWatchlistItem == null || isWatchlistItem == false){
+                    if(!isWatchlistItem){
                         Button(
                             onClick = {
                                 roomViewModel.addToWatchlist(
@@ -205,7 +203,7 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                         }
                     }
 
-                    if(isWatchedItem == null || isWatchedItem == false) {
+                    if(!isWatchedItem) {
                         Button(
                             onClick = {
                                 roomViewModel.addToWatchedlist(
@@ -253,8 +251,8 @@ fun MovieDetailsPage(movieId: String?, movieViewModel: MovieViewModel, navContro
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(recommendations.size) { index ->
-                            val movie = recommendations[index]
-                            RecommendationCard(movie, movieViewModel, navController)
+                            val movieItem = recommendations[index]
+                            RecommendationCard(movieItem, movieViewModel, navController)
                         }
                     }
                 }
