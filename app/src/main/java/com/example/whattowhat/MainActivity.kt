@@ -45,6 +45,7 @@ import com.example.whattowhat.model.NavigationOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.onFocusChanged
@@ -207,6 +208,18 @@ class MainActivity : ComponentActivity() {
                                         SearchMoviesScreen(
                                             movieViewModel,
                                             navController
+                                        )
+                                    }
+
+                                    composable("gpt") {
+                                        val gptViewModel: GptViewModel by viewModels {
+                                            GptViewModelFactory(RetrofitClient.openAiInstance)
+                                        }
+
+                                        GptInteractionScreen(
+                                            question = gptViewModel.question.collectAsState(),
+                                            recommendations = gptViewModel.recommendations.collectAsState(),
+                                            viewModel = gptViewModel
                                         )
                                     }
                                 }

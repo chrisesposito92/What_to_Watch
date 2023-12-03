@@ -1,4 +1,5 @@
 import com.example.whattowhat.network.OMDBApiService
+import com.example.whattowhat.network.OpenAIService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -20,5 +21,15 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(OMDBApiService::class.java)
+    }
+
+    private const val OPENAI_BASE_URL = "https://api.openai.com/"
+
+    val openAiInstance: OpenAIService by lazy {
+        Retrofit.Builder()
+            .baseUrl(OPENAI_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(OpenAIService::class.java)
     }
 }

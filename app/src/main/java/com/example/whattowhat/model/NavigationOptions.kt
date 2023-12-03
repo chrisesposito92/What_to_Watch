@@ -1,6 +1,7 @@
 package com.example.whattowhat.model
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Favorite
@@ -33,6 +34,11 @@ object NavigationOptions {
             Icons.Default.Search,
             title = "Search",
             route = "search"
+        ),
+        NavigationOption(
+            Icons.Default.Android,
+            title = "GPT",
+            route = "gpt"
         )
     )
 }
