@@ -202,6 +202,13 @@ class MainActivity : ComponentActivity() {
                                             navController
                                         )
                                     }
+
+                                    composable("search") {
+                                        SearchMoviesScreen(
+                                            movieViewModel,
+                                            navController
+                                        )
+                                    }
                                 }
                             }
                         }

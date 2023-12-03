@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
 
 object NavigationOptions {
     val options = listOf(
@@ -28,5 +29,10 @@ object NavigationOptions {
             title = "Edit Providers",
             route = "providerSelection"
         ),
+        NavigationOption(
+            Icons.Default.Search,
+            title = "Search",
+            route = "search"
+        )
     )
 }

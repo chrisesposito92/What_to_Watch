@@ -91,4 +91,16 @@ interface TMDBApiService {
         @Query("page") page: Int = 1
     ): Response<MovieDiscoverResponse>
 
+    @GET("search/movie")
+    suspend fun searchMovies(
+        @Query("api_key") apiKey: String = "500f402322677a4df10fb559aa63f22b",
+        @Query("query") query: String,
+        @Query("include_adult") includeAdult: Boolean = false,
+        @Query("language") language: String = "en-US",
+        @Query("page") page: Int = 1,
+        @Query("region") region: String = "US",
+        @Query("year") year: Int? = null,
+        @Query("primary_release_year") primaryReleaseYear: Int? = null,
+    ): Response<MovieDiscoverResponse>
+
 }

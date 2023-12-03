@@ -76,7 +76,7 @@ fun MovieItemView(movie: MovieItem, movieViewModel: MovieViewModel, navControlle
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = movie.title + " (" + movie.release_date.substring(0, 4) + ")",
+            text = movie.title + " (" + if (movie.release_date.length >= 4) movie.release_date.substring(0, 4) + ")" else movie.release_date + ")",
             style = TextStyle(
                 fontSize = 12.sp,
                 color = Color.Black,

@@ -14,6 +14,44 @@ import com.example.whattowhat.model.TvItem
 
 class MovieViewModel : ViewModel() {
 
+    private val _moviesSearchState = MutableLiveData<List<MovieItem>>()
+    val moviesSearchState: LiveData<List<MovieItem>> = _moviesSearchState
+
+    fun searchMovies(apiKey: String, query: String) {
+        viewModelScope.launch {
+            val response = RetrofitClient.tmdbInstance.searchMovies(
+                apiKey = apiKey,
+                page = 1,
+                query = query
+            )
+
+            var movies = mutableListOf<MovieItem>()
+
+            if(response.isSuccessful) {
+                val totalPages = response.body()!!.total_pages
+                for(Int in 1..totalPages){
+                    val response = RetrofitClient.tmdbInstance.searchMovies(
+                        apiKey = apiKey,
+                        page = Int,
+                        query = query
+                    )
+                    if(response.isSuccessful){
+                        if(Int == 1){
+                            movies = response.body()!!.results.toMutableList()
+                        }else{
+                            movies = (movies + response.body()!!.results.toMutableList()).toMutableList()
+                        }
+                    } else {
+                        Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+                    }
+                }
+                _moviesSearchState.postValue(movies)
+            }else {
+                Log.e("MovieViewModel", "Error fetching movies: ${response.errorBody()?.string()}")
+            }
+        }
+    }
+
     // LiveData to observe movies
     private val _moviesState = MutableLiveData<List<MovieItem>>()
     val moviesState: LiveData<List<MovieItem>> = _moviesState
